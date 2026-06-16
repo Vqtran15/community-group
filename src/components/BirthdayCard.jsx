@@ -1,27 +1,20 @@
-import { useEffect, useState } from 'react'
 import { formatBirthdayDate } from '../utils/birthdays.js'
+import { useEntranceAnimation } from '../hooks/useEntranceAnimation.js'
 
 export default function BirthdayCard({ index, birthday, days, revealKey, onClick }) {
-  const fromLeft = index % 2 === 0
-  const [entering, setEntering] = useState(true)
-
-  useEffect(() => {
-    setEntering(true)
-    const t = setTimeout(() => setEntering(false), 2600)
-    return () => clearTimeout(t)
-  }, [revealKey])
+  const { className: entranceClass, style: entranceStyle } = useEntranceAnimation(revealKey, index)
 
   return (
     <button
       onClick={onClick}
-      style={entering ? { animationDelay: `${Math.min(index, 10) * 170}ms` } : undefined}
+      style={entranceStyle}
       className={`w-full text-left p-4 rounded-xl border-2 shadow-sm transition-all hover:shadow-md focus:outline-none focus:ring-2 focus:ring-jade ${
         days <= 14
           ? 'bg-coral-light border-coral-100 hover:border-coral'
           : days <= 30
           ? 'bg-lagoon-50 border-lagoon-200 hover:border-lagoon'
           : 'bg-white border-stone-200 hover:border-stone-300'
-      } ${entering ? (fromLeft ? 'animate-card-slide-left' : 'animate-card-slide-right') : ''}`}
+      } ${entranceClass}`}
     >
       <div className="flex items-center justify-between gap-3">
         <div>

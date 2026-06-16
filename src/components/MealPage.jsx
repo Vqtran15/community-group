@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase.js'
 import { formatDate } from '../utils/dates.js'
+import { useEntranceAnimation } from '../hooks/useEntranceAnimation.js'
 import SlotCard from './SlotCard.jsx'
 import SignupModal from './SignupModal.jsx'
 import EditDishesModal from './EditDishesModal.jsx'
@@ -10,13 +11,7 @@ export default function MealPage({ page, noun, itemNoun, editLabel, tables, reve
   const [loading, setLoading]           = useState(true)
   const [selectedSlot, setSelectedSlot] = useState(null)
   const [showEditDishes, setShowEditDishes] = useState(false)
-  const [headerEntering, setHeaderEntering] = useState(true)
-
-  useEffect(() => {
-    setHeaderEntering(true)
-    const t = setTimeout(() => setHeaderEntering(false), 1100)
-    return () => clearTimeout(t)
-  }, [revealKey, page?.id])
+  const { className: headerEntranceClass } = useEntranceAnimation(`${revealKey}-${page?.id}`, 0, { direction: 'left' })
 
   useEffect(() => {
     if (!page) return
@@ -168,7 +163,7 @@ export default function MealPage({ page, noun, itemNoun, editLabel, tables, reve
 
   return (
     <main className="max-w-3xl mx-auto px-4 pb-12">
-      <div className={`mb-6 relative overflow-hidden bg-white rounded-xl shadow-sm border border-stone-100 p-4 flex items-start justify-between gap-4 ${headerEntering ? 'animate-card-slide-left' : ''}`}>
+      <div className={`mb-6 relative overflow-hidden bg-white rounded-xl shadow-sm border border-stone-100 p-4 flex items-start justify-between gap-4 ${headerEntranceClass}`}>
         <span className="absolute top-0 left-0 right-0 h-1 bg-coral" />
         <div>
           <h1 className="text-2xl font-bold text-stone-800">{page.title}</h1>

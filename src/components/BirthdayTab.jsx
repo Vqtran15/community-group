@@ -142,7 +142,7 @@ function BirthdayModal({ birthday, onClose, onSave, onDelete }) {
                   type="button"
                   onClick={() => setConfirmDelete(false)}
                   disabled={deleting}
-                  className="text-sm text-stone-500 hover:text-stone-700 font-medium px-2 disabled:opacity-50"
+                  className="text-sm text-stone-500 hover:text-stone-700 font-medium px-3 py-2.5 min-h-[44px] disabled:opacity-50"
                 >
                   Cancel
                 </button>
@@ -150,7 +150,7 @@ function BirthdayModal({ birthday, onClose, onSave, onDelete }) {
                   type="button"
                   onClick={handleDelete}
                   disabled={deleting}
-                  className="text-sm text-white bg-red-500 hover:bg-red-600 font-medium px-3 py-1 rounded-lg disabled:opacity-50 transition-colors"
+                  className="text-sm text-white bg-red-500 hover:bg-red-600 font-medium px-4 py-2.5 min-h-[44px] rounded-lg disabled:opacity-50 transition-colors"
                 >
                   {deleting ? 'Removing…' : 'Remove'}
                 </button>

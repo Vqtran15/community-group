@@ -87,7 +87,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-sunrise-50" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+    <div className="min-h-screen bg-sunrise-50 overflow-x-hidden" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
       <BirthdayBanner upcoming={upcoming} />
 
       <div
