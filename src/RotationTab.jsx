@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { GearSix } from '@phosphor-icons/react'
 import { supabase } from './lib/supabase.js'
-import { patchTitleDate } from './utils/dates.js'
+import { patchTitleDate, toDateString } from './utils/dates.js'
 import MealPage from './components/MealPage.jsx'
 import AddPageModal from './components/AddPageModal.jsx'
 import SettingsModal from './components/SettingsModal.jsx'
@@ -22,7 +22,11 @@ export default function RotationTab({ config, revealKey }) {
     async function load() {
       const { data, error: err } = await supabase.from(tables.pages).select('*').order('position')
       if (err) { setError(err.message); setLoading(false); return }
-      setPages(data ?? [])
+      const loaded = data ?? []
+      const today = toDateString(new Date())
+      const upcomingIdx = loaded.findIndex(p => p.week_date >= today)
+      setPages(loaded)
+      setViewIndex(upcomingIdx === -1 ? Math.max(0, loaded.length - 1) : upcomingIdx)
       setLoading(false)
     }
     load()
@@ -113,10 +117,18 @@ export default function RotationTab({ config, revealKey }) {
   return (
     <>
       <div className="max-w-3xl mx-auto px-4 pt-8 pb-2 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+        <button
+          onClick={() => {
+            const today = toDateString(new Date())
+            const idx = pages.findIndex(p => p.week_date >= today)
+            setViewIndex(idx === -1 ? pages.length - 1 : idx)
+            window.scrollTo({ top: 0, behavior: 'instant' })
+          }}
+          className="flex items-center gap-3 active:opacity-60 transition-opacity"
+        >
           <Icon size={32} weight="fill" className="text-jade shrink-0" />
           <h1 className="text-3xl font-bold text-stone-800">{label}</h1>
-        </div>
+        </button>
         <button
           onClick={() => setShowSettings(true)}
           className="w-9 h-9 flex items-center justify-center rounded-xl text-stone-400 hover:text-stone-700 hover:bg-black/5 transition-colors"

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Plus } from '@phosphor-icons/react'
 import { supabase } from '../lib/supabase.js'
 import { formatDate } from '../utils/dates.js'
 import { useEntranceAnimation } from '../hooks/useEntranceAnimation.js'
@@ -11,6 +12,7 @@ export default function MealPage({ page, noun, itemNoun, editLabel, tables, reve
   const [loading, setLoading]           = useState(true)
   const [selectedSlot, setSelectedSlot] = useState(null)
   const [showEditDishes, setShowEditDishes] = useState(false)
+  const [justAddedSlot, setJustAddedSlot] = useState(null)
   const { className: headerEntranceClass } = useEntranceAnimation(`${revealKey}-${page?.id}`, 0, { direction: 'left' })
 
   useEffect(() => {
@@ -127,6 +129,20 @@ export default function MealPage({ page, noun, itemNoun, editLabel, tables, reve
     setSelectedSlot(null)
   }
 
+  async function handleAddSlot() {
+    const newSlotNumber = page.slot_count + 1
+    const newDishes = [...(page.slot_dishes ?? []), '']
+    const { data, error } = await supabase
+      .from(tables.pages)
+      .update({ slot_count: newSlotNumber, slot_dishes: newDishes })
+      .eq('id', page.id)
+      .select()
+      .single()
+    if (error) throw new Error(error.message)
+    setJustAddedSlot(newSlotNumber)
+    onPageUpdate(data)
+  }
+
   async function handleSaveDishes({ newTitle, newDate, newDishes, removedOrigSlots, renames }) {
     if (removedOrigSlots.length > 0) {
       const { error } = await supabase
@@ -206,20 +222,30 @@ export default function MealPage({ page, noun, itemNoun, editLabel, tables, reve
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {slots.map(n => (
-            <SlotCard
-              key={`${page.id}-${n}`}
-              slotNumber={n}
-              noun={noun}
-              itemNoun={itemNoun}
-              dishName={page.slot_dishes?.[n - 1] ?? ''}
-              signup={signups.find(s => s.slot_number === n)}
-              revealKey={revealKey}
-              onClick={() => setSelectedSlot(n)}
-            />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {slots.map(n => (
+              <SlotCard
+                key={`${page.id}-${n}`}
+                slotNumber={n}
+                noun={noun}
+                itemNoun={itemNoun}
+                dishName={page.slot_dishes?.[n - 1] ?? ''}
+                signup={signups.find(s => s.slot_number === n)}
+                revealKey={revealKey}
+                isNew={n === justAddedSlot}
+                onClick={() => setSelectedSlot(n)}
+              />
+            ))}
+          </div>
+          <button
+            onClick={handleAddSlot}
+            className="mt-4 w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-dashed border-stone-200 text-stone-400 hover:border-jade hover:text-jade transition-colors"
+          >
+            <Plus size={16} weight="bold" />
+            <span className="text-sm font-medium">Add {noun}</span>
+          </button>
+        </>
       )}
 
       {selectedSlot !== null && (

@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { useEntranceAnimation } from '../hooks/useEntranceAnimation.js'
 
-export default function SlotCard({ slotNumber, noun, itemNoun, dishName, signup, revealKey, onClick }) {
+export default function SlotCard({ slotNumber, noun, itemNoun, dishName, signup, revealKey, isNew = false, onClick }) {
   const filled = Boolean(signup)
   const [pulse, setPulse] = useState(false)
   const prevRef = useRef({ dishName, signupId: signup?.id, signupName: signup?.name })
-  const { className: entranceClass, style: entranceStyle } = useEntranceAnimation(revealKey, slotNumber - 1)
+  const { className: entranceClass, style: entranceStyle } = useEntranceAnimation(revealKey, isNew ? 0 : slotNumber - 1)
 
   useEffect(() => {
     const prev = prevRef.current

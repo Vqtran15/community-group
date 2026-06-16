@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
 import { ForkKnife, HandHeart, Confetti } from '@phosphor-icons/react'
 import { formatDate } from './utils/dates.js'
 import { getUpcomingBirthdays } from './utils/birthdays.js'
@@ -9,8 +10,7 @@ import BirthdayBanner from './components/BirthdayBanner.jsx'
 
 const TABS = [
   {
-    id: 'meal',
-    label: 'Meal Sign-up',
+    path: '/meals',
     shortLabel: 'Meals',
     Icon: ForkKnife,
     config: {
@@ -24,8 +24,7 @@ const TABS = [
     },
   },
   {
-    id: 'serving',
-    label: 'Service Night',
+    path: '/services',
     shortLabel: 'Service',
     Icon: HandHeart,
     config: {
@@ -39,19 +38,19 @@ const TABS = [
     },
   },
   {
-    id: 'birthdays',
-    label: 'Birthdays',
+    path: '/birthdays',
     shortLabel: 'Birthdays',
     Icon: Confetti,
   },
 ]
 
-const TAB_ORDER = TABS.map(t => t.id)
+const PATHS = TABS.map(t => t.path)
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('meal')
+  const navigate = useNavigate()
+  const location = useLocation()
+  const prevIndexRef = useRef(PATHS.indexOf(location.pathname))
   const [enterFrom, setEnterFrom] = useState('right')
-  const prevIndexRef = useRef(TAB_ORDER.indexOf('meal'))
   const [birthdays, setBirthdays] = useState([])
 
   useEffect(() => {
@@ -76,13 +75,12 @@ export default function App() {
   }, [])
 
   const upcoming = getUpcomingBirthdays(birthdays)
-  const tab = TABS.find(t => t.id === activeTab)
 
-  function handleTabChange(id) {
-    const newIndex = TAB_ORDER.indexOf(id)
+  function handleTabChange(path) {
+    const newIndex = PATHS.indexOf(path)
     setEnterFrom(newIndex > prevIndexRef.current ? 'right' : 'left')
     prevIndexRef.current = newIndex
-    setActiveTab(id)
+    navigate(path)
   }
 
   return (
@@ -90,40 +88,39 @@ export default function App() {
       <BirthdayBanner upcoming={upcoming} />
 
       <div
-        key={activeTab}
+        key={location.pathname}
         className={`pb-24 ${enterFrom === 'right' ? 'animate-slide-in-right' : 'animate-slide-in-left'}`}
       >
-        {activeTab === 'birthdays' ? (
-          <BirthdayTab birthdays={birthdays} onBirthdaysChange={setBirthdays} revealKey={activeTab} />
-        ) : (
-          <RotationTab config={tab.config} revealKey={activeTab} />
-        )}
+        <Routes>
+          <Route path="/" element={<Navigate to="/meals" replace />} />
+          <Route path="/meals" element={<RotationTab config={TABS[0].config} revealKey="/meals" />} />
+          <Route path="/services" element={<RotationTab config={TABS[1].config} revealKey="/services" />} />
+          <Route path="/birthdays" element={<BirthdayTab birthdays={birthdays} onBirthdaysChange={setBirthdays} revealKey="/birthdays" />} />
+        </Routes>
       </div>
 
       <nav
         className="fixed bottom-0 inset-x-0 bg-white border-t border-stone-200 z-40 flex"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
-        {TABS.map(t => (
-          <button
-            key={t.id}
-            onClick={() => handleTabChange(t.id)}
-            className={`flex-1 flex flex-col items-center gap-0.5 py-2 px-1 transition-colors ${
-              activeTab === t.id ? '' : 'text-stone-400 hover:text-stone-600'
-            }`}
-          >
-            <span className={`relative px-3 py-1 rounded-2xl transition-colors ${activeTab === t.id ? 'bg-jade text-white' : ''}`}>
-              <t.Icon
-                size={26}
-                weight={activeTab === t.id ? 'fill' : 'regular'}
-              />
-              {t.id === 'birthdays' && upcoming.length > 0 && (
-                <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-lagoon rounded-full border-2 border-white" />
-              )}
-            </span>
-            <span className={`text-[10px] font-medium tracking-wide ${activeTab === t.id ? 'text-jade' : ''}`}>{t.shortLabel}</span>
-          </button>
-        ))}
+        {TABS.map(t => {
+          const active = location.pathname === t.path
+          return (
+            <button
+              key={t.path}
+              onClick={() => handleTabChange(t.path)}
+              className={`flex-1 flex flex-col items-center gap-0.5 py-2 px-1 transition-colors ${active ? '' : 'text-stone-400 hover:text-stone-600'}`}
+            >
+              <span className={`relative px-3 py-1 rounded-2xl transition-colors ${active ? 'bg-jade text-white' : ''}`}>
+                <t.Icon size={26} weight={active ? 'fill' : 'regular'} />
+                {t.path === '/birthdays' && upcoming.length > 0 && (
+                  <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-lagoon rounded-full border-2 border-white" />
+                )}
+              </span>
+              <span className={`text-[10px] font-medium tracking-wide ${active ? 'text-jade' : ''}`}>{t.shortLabel}</span>
+            </button>
+          )
+        })}
       </nav>
     </div>
   )
