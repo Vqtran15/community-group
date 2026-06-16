@@ -1,7 +1,7 @@
-import { GearSix, ListBullets } from '@phosphor-icons/react'
+import { GearSix, ListBullets, PencilSimple } from '@phosphor-icons/react'
 import { useModalClose } from '../hooks/useModalClose.js'
 
-export default function SettingsModal({ onManagePages, onClose }) {
+export default function SettingsModal({ editLabel, onEditPage, onManagePages, onClose }) {
   const [closing, close] = useModalClose(onClose)
 
   return (
@@ -30,6 +30,22 @@ export default function SettingsModal({ onManagePages, onClose }) {
           <p className="text-xs font-semibold text-stone-400 uppercase tracking-wide pb-1">
             Pages
           </p>
+          {onEditPage && (
+            <button
+              onClick={onEditPage}
+              className="w-full flex items-center justify-between px-4 py-3.5 rounded-xl border-2 border-stone-200 bg-white hover:border-coral hover:bg-coral-light transition-all"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-coral-100 flex items-center justify-center">
+                  <PencilSimple size={16} weight="bold" className="text-coral-700" />
+                </div>
+                <div className="text-left">
+                  <div className="text-sm font-semibold text-stone-800">{editLabel}</div>
+                  <div className="text-xs text-stone-400 mt-0.5">Edit title, date, and ingredients</div>
+                </div>
+              </div>
+            </button>
+          )}
           <button
             onClick={onManagePages}
             className="w-full flex items-center justify-between px-4 py-3.5 rounded-xl border-2 border-stone-200 bg-white hover:border-jade hover:bg-lagoon-50 transition-all"

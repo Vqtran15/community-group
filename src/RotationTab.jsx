@@ -14,9 +14,10 @@ export default function RotationTab({ config, revealKey }) {
   const [viewIndex, setViewIndex] = useState(0)
   const [loading, setLoading]   = useState(true)
   const [error, setError]       = useState(null)
-  const [showAddModal, setShowAddModal]     = useState(false)
-  const [showSettings, setShowSettings]     = useState(false)
+  const [showAddModal, setShowAddModal]       = useState(false)
+  const [showSettings, setShowSettings]       = useState(false)
   const [showManagePages, setShowManagePages] = useState(false)
+  const [showEditPage, setShowEditPage]       = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -153,6 +154,8 @@ export default function RotationTab({ config, revealKey }) {
             onNextPage={() => { setViewIndex(i => i + 1); window.scrollTo({ top: 0, behavior: 'instant' }) }}
             onPageUpdate={p => setPages(prev => prev.map(x => x.id === p.id ? p : x))}
             onPageDelete={handlePageDeleted}
+            editOpen={showEditPage}
+            onEditClose={() => setShowEditPage(false)}
           />
         ) : (
           <div className="max-w-3xl mx-auto px-4 py-20 text-center">
@@ -171,6 +174,8 @@ export default function RotationTab({ config, revealKey }) {
 
       {showSettings && (
         <SettingsModal
+          editLabel={editLabel}
+          onEditPage={viewedPage ? () => { setShowSettings(false); setShowEditPage(true) } : undefined}
           onManagePages={() => { setShowSettings(false); setShowManagePages(true) }}
           onClose={() => setShowSettings(false)}
         />

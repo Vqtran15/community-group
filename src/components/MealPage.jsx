@@ -7,11 +7,10 @@ import SlotCard from './SlotCard.jsx'
 import SignupModal from './SignupModal.jsx'
 import EditDishesModal from './EditDishesModal.jsx'
 
-export default function MealPage({ page, noun, itemNoun, editLabel, tables, revealKey, pageCount, canGoPrev, canGoNext, onPrevPage, onNextPage, onPageUpdate, onPageDelete }) {
+export default function MealPage({ page, noun, itemNoun, editLabel, tables, revealKey, pageCount, canGoPrev, canGoNext, onPrevPage, onNextPage, onPageUpdate, onPageDelete, editOpen, onEditClose }) {
   const [signups, setSignups]           = useState([])
   const [loading, setLoading]           = useState(true)
   const [selectedSlot, setSelectedSlot] = useState(null)
-  const [showEditDishes, setShowEditDishes] = useState(false)
   const [justAddedSlot, setJustAddedSlot] = useState(null)
   const { className: headerEntranceClass } = useEntranceAnimation(`${revealKey}-${page?.id}`, 0, { direction: 'left' })
 
@@ -170,7 +169,7 @@ export default function MealPage({ page, noun, itemNoun, editLabel, tables, reve
       .single()
     if (error) throw new Error(error.message)
     onPageUpdate(data)
-    setShowEditDishes(false)
+    onEditClose()
   }
 
   const slots = Array.from({ length: page.slot_count }, (_, i) => i + 1)
@@ -206,12 +205,6 @@ export default function MealPage({ page, noun, itemNoun, editLabel, tables, reve
               {filledCount} / {page.slot_count} {noun.toLowerCase()}s filled
             </p>
           </div>
-          <button
-            onClick={() => setShowEditDishes(true)}
-            className="shrink-0 mt-1 flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-stone-600 border border-stone-300 rounded-lg hover:bg-stone-50 transition-colors"
-          >
-            ✎ {editLabel}
-          </button>
         </div>
       </div>
 
@@ -261,17 +254,17 @@ export default function MealPage({ page, noun, itemNoun, editLabel, tables, reve
         />
       )}
 
-      {showEditDishes && (
+      {editOpen && (
         <EditDishesModal
           page={page}
           noun={noun}
           signups={signups}
-          onClose={() => setShowEditDishes(false)}
+          onClose={onEditClose}
           onSave={handleSaveDishes}
           onDelete={async () => {
             const { error } = await supabase.from(tables.pages).delete().eq('id', page.id)
             if (error) throw new Error(error.message)
-            setShowEditDishes(false)
+            onEditClose()
             onPageDelete(page.id)
           }}
         />
