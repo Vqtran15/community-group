@@ -62,6 +62,10 @@ export default {
           '0%':   { opacity: '0', transform: 'translateX(-36px)' },
           '100%': { opacity: '1', transform: 'translateX(0)' },
         },
+        'slide-out-right': {
+          '0%':   { opacity: '1', transform: 'translateX(0)' },
+          '100%': { opacity: '0', transform: 'translateX(40px)' },
+        },
         'card-pulse': {
           '0%':   { boxShadow: '0 0 0 0 rgba(196,98,45,0.45)' },
           '70%':  { boxShadow: '0 0 0 10px rgba(196,98,45,0)' },
@@ -108,6 +112,7 @@ export default {
         'overlay-out':      'overlay-out 0.18s ease-in forwards',
         'slide-in-right':   'slide-in-right 0.22s ease-out',
         'slide-in-left':    'slide-in-left 0.22s ease-out',
+        'slide-out-right':  'slide-out-right 0.2s ease-in forwards',
         'card-pulse':       'card-pulse 0.65s ease-out',
         'card-slide-left':  'card-slide-left 0.65s cubic-bezier(0.16,1,0.3,1) backwards',
         'card-slide-right': 'card-slide-right 0.65s cubic-bezier(0.16,1,0.3,1) backwards',

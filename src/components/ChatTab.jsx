@@ -4,8 +4,10 @@ import ConversationList from './ConversationList.jsx'
 import ChatView from './ChatView.jsx'
 
 export default function ChatTab({ session, displayName, groupId, onRead }) {
-  const [activeConv, setActiveConv] = useState(null)
-  const [members, setMembers] = useState([])
+  const [activeConv, setActiveConv]   = useState(null)
+  const [members, setMembers]         = useState([])
+  const [chatExiting, setChatExiting] = useState(false)
+  const [listClass, setListClass]     = useState('')
 
   useEffect(() => {
     if (!groupId) return
@@ -16,6 +18,20 @@ export default function ChatTab({ session, displayName, groupId, onRead }) {
       .then(({ data }) => setMembers(data ?? []))
   }, [groupId])
 
+  function openConv(conv) {
+    setListClass('')
+    setActiveConv(conv)
+  }
+
+  function goBack() {
+    setChatExiting(true)
+    setTimeout(() => {
+      setChatExiting(false)
+      setActiveConv(null)
+      setListClass('animate-slide-in-left')
+    }, 200)
+  }
+
   if (activeConv) {
     return (
       <ChatView
@@ -24,7 +40,8 @@ export default function ChatTab({ session, displayName, groupId, onRead }) {
         displayName={displayName}
         groupId={groupId}
         members={members}
-        onBack={() => setActiveConv(null)}
+        exiting={chatExiting}
+        onBack={goBack}
         onRead={onRead}
       />
     )
@@ -35,7 +52,8 @@ export default function ChatTab({ session, displayName, groupId, onRead }) {
       session={session}
       groupId={groupId}
       members={members}
-      onSelect={setActiveConv}
+      enterClass={listClass}
+      onSelect={openConv}
       onRead={onRead}
     />
   )

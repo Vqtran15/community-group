@@ -68,7 +68,7 @@ function typingLabel(users) {
   return `${users.length} people are typing…`
 }
 
-export default function ChatView({ conversation, session, displayName, groupId, members, onBack, onRead }) {
+export default function ChatView({ conversation, session, displayName, groupId, members, exiting, onBack, onRead }) {
   const [messages, setMessages]         = useState([])
   const [loading, setLoading]           = useState(true)
   const [hasMore, setHasMore]           = useState(false)
@@ -400,7 +400,7 @@ export default function ChatView({ conversation, session, displayName, groupId, 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div
-      className="flex flex-col bg-sunrise-50"
+      className={`flex flex-col bg-sunrise-50 ${exiting ? 'animate-slide-out-right' : 'animate-slide-in-right'}`}
       style={{ height: 'calc(100svh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 62px)' }}
     >
       {/* Header */}

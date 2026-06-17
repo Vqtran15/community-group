@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { ChatCircleDots, PencilSimple, Users } from '@phosphor-icons/react'
 import { supabase } from '../lib/supabase.js'
 import { useEntranceAnimation } from '../hooks/useEntranceAnimation.js'
+import { useModalClose } from '../hooks/useModalClose.js'
 
 const AVATAR_COLORS = ['bg-jade', 'bg-coral', 'bg-lagoon-700']
 function avatarColor(userId) {
@@ -22,12 +23,13 @@ function formatTime(iso) {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
-export default function ConversationList({ session, groupId, members, onSelect, onRead }) {
+export default function ConversationList({ session, groupId, members, enterClass, onSelect, onRead }) {
   const [conversations, setConversations] = useState([])
   const [lastMessages, setLastMessages]   = useState({})
   const [loading, setLoading]             = useState(true)
   const [newDmOpen, setNewDmOpen]         = useState(false)
   const [starting, setStarting]           = useState(false)
+  const [dmClosing, closeDm]              = useModalClose(() => setNewDmOpen(false))
 
   const myId = session.user.id
   const { className: headerClass } = useEntranceAnimation('/chat', 0, { direction: 'left' })
@@ -115,7 +117,7 @@ if (error) throw error
 
     const existing = conversations.find(c => c.id === convId)
     if (existing) {
-      setNewDmOpen(false)
+      closeDm()
       setStarting(false)
       onSelect(existing)
       return
@@ -127,7 +129,7 @@ if (error) throw error
       .eq('id', convId)
       .single()
 
-    setNewDmOpen(false)
+    closeDm()
     setStarting(false)
     if (conv) {
       setConversations(prev => [conv, ...prev])
@@ -139,7 +141,7 @@ if (error) throw error
 
   return (
     <div
-      className="flex flex-col bg-sunrise-50"
+      className={`flex flex-col bg-sunrise-50 ${enterClass ?? ''}`}
       style={{ height: 'calc(100svh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 62px)' }}
     >
       {/* Header */}
@@ -205,17 +207,17 @@ if (error) throw error
       {/* New DM sheet */}
       {newDmOpen && (
         <div
-          className="fixed inset-0 bg-black/50 flex items-end z-50 animate-overlay-in"
-          onClick={() => setNewDmOpen(false)}
+          className={`fixed inset-0 bg-black/50 flex items-end z-50 ${dmClosing ? 'animate-overlay-out' : 'animate-overlay-in'}`}
+          onClick={closeDm}
         >
           <div
-            className="bg-white rounded-t-2xl w-full max-w-lg mx-auto animate-modal-in pb-safe"
+            className={`bg-white rounded-t-2xl w-full max-w-lg mx-auto pb-safe ${dmClosing ? 'animate-modal-out' : 'animate-modal-in'}`}
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-5 pt-5 pb-3">
               <h2 className="text-lg font-bold text-stone-800">New Message</h2>
               <button
-                onClick={() => setNewDmOpen(false)}
+                onClick={closeDm}
                 className="text-stone-400 hover:text-stone-600 text-2xl leading-none w-8 h-8 flex items-center justify-center rounded-full hover:bg-stone-100"
               >
                 &times;
