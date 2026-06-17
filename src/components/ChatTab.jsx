@@ -87,7 +87,8 @@ export default function ChatTab({ session, displayName, groupId, onRead }) {
         event: 'INSERT', schema: 'public', table: 'messages',
         filter: `community_group_id=eq.${groupId}`,
       }, ({ new: msg }) => {
-        setMessages(prev => [...prev, { ...msg, _isNew: true }])
+        // Skip if already added optimistically by handleSend
+        setMessages(prev => prev.some(m => m.id === msg.id) ? prev : [...prev, { ...msg, _isNew: true }])
       })
       .subscribe()
 
@@ -140,13 +141,15 @@ export default function ChatTab({ session, displayName, groupId, onRead }) {
         imageUrl = publicUrl
       }
 
-      await supabase.from('messages').insert({
+      const { data: newMsg } = await supabase.from('messages').insert({
         community_group_id: groupId,
         user_id: session.user.id,
         display_name: displayName || 'Member',
         body: trimmed || null,
         image_url: imageUrl,
-      })
+      }).select().single()
+
+      if (newMsg) setMessages(prev => [...prev, { ...newMsg, _isNew: true }])
 
       setText('')
       setImagePreview(null)
