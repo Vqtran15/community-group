@@ -7,8 +7,50 @@ import AddPageModal from './components/AddPageModal.jsx'
 import SettingsModal from './components/SettingsModal.jsx'
 import ManagePagesModal from './components/ManagePagesModal.jsx'
 
+const FUTURE_BUFFER = 2  // always keep at least this many pages with dates after today
+const AUTO_FILL_LIMIT = 10 // safety cap per load
+
+async function autoFillPages(existingPages, tables, defaultTitle) {
+  if (!existingPages.length) return existingPages
+
+  const today = toDateString(new Date())
+  if (existingPages.filter(p => p.week_date > today).length >= FUTURE_BUFFER) return existingPages
+
+  // Snapshot sorted oldest→newest — this is the cycling pool
+  const pool = [...existingPages].sort((a, b) => a.week_date.localeCompare(b.week_date))
+  const result = [...existingPages]
+  let k = 0
+
+  while (result.filter(p => p.week_date > today).length < FUTURE_BUFFER && k < AUTO_FILL_LIMIT) {
+    const lastPage = result[result.length - 1]
+    const lastDate = new Date(lastPage.week_date + 'T12:00:00')
+    lastDate.setDate(lastDate.getDate() + 7)
+    const nextDateStr = toDateString(lastDate)
+
+    const template = pool[k % pool.length]
+
+    const { data: newPage, error } = await supabase
+      .from(tables.pages)
+      .insert({
+        title: defaultTitle(nextDateStr),
+        week_date: nextDateStr,
+        slot_count: template.slot_count,
+        slot_dishes: template.slot_dishes ?? [],
+        position: result.length,
+      })
+      .select()
+      .single()
+
+    if (error) break
+    result.push(newPage)
+    k++
+  }
+
+  return result
+}
+
 export default function RotationTab({ config, revealKey }) {
-  const { label, Icon, editLabel, noun, itemNoun, tables, defaultTitle } = config
+  const { label, Icon, editLabel, noun, itemNoun, tables, defaultTitle, autoFill = false } = config
 
   const [pages, setPages]       = useState([])
   const [viewIndex, setViewIndex] = useState(0)
@@ -23,11 +65,11 @@ export default function RotationTab({ config, revealKey }) {
     async function load() {
       const { data, error: err } = await supabase.from(tables.pages).select('*').order('position')
       if (err) { setError(err.message); setLoading(false); return }
-      const loaded = data ?? []
+      const filled = autoFill ? await autoFillPages(data ?? [], tables, defaultTitle) : (data ?? [])
       const today = toDateString(new Date())
-      const upcomingIdx = loaded.findIndex(p => p.week_date >= today)
-      setPages(loaded)
-      setViewIndex(upcomingIdx === -1 ? Math.max(0, loaded.length - 1) : upcomingIdx)
+      const upcomingIdx = filled.findIndex(p => p.week_date >= today)
+      setPages(filled)
+      setViewIndex(upcomingIdx === -1 ? Math.max(0, filled.length - 1) : upcomingIdx)
       setLoading(false)
     }
     load()

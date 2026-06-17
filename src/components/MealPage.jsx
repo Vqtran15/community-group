@@ -188,7 +188,7 @@ export default function MealPage({ page, noun, itemNoun, editLabel, tables, reve
                 <button
                   onClick={onPrevPage}
                   disabled={!canGoPrev}
-                  className="shrink-0 w-7 h-7 flex items-center justify-center rounded-full border-2 border-stone-200 text-stone-500 hover:border-jade hover:text-jade disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  className="shrink-0 w-7 h-7 flex items-center justify-center rounded-full border-2 border-stone-200 text-stone-500 hover:border-jade hover:text-jade disabled:opacity-30 disabled:cursor-not-allowed transition-colors touch-manipulation"
                 >‹</button>
               )}
               <h1 className="text-2xl font-bold text-stone-800 truncate">{page.title}</h1>
@@ -196,7 +196,7 @@ export default function MealPage({ page, noun, itemNoun, editLabel, tables, reve
                 <button
                   onClick={onNextPage}
                   disabled={!canGoNext}
-                  className="shrink-0 w-7 h-7 flex items-center justify-center rounded-full border-2 border-stone-200 text-stone-500 hover:border-jade hover:text-jade disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  className="shrink-0 w-7 h-7 flex items-center justify-center rounded-full border-2 border-stone-200 text-stone-500 hover:border-jade hover:text-jade disabled:opacity-30 disabled:cursor-not-allowed transition-colors touch-manipulation"
                 >›</button>
               )}
             </div>

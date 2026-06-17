@@ -20,6 +20,7 @@ const TABS = [
       noun: 'Ingredient',
       itemNoun: 'Ingredient',
       tables: { pages: 'meal_pages', signups: 'signups' },
+      autoFill: true,
       defaultTitle: dateStr => `Meal — ${formatDate(dateStr)}`,
     },
   },
