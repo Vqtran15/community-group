@@ -35,30 +35,42 @@ export default function ConversationList({ session, groupId, members, onSelect, 
   const { className: headerClass } = useEntranceAnimation('/chat', 0, { direction: 'left' })
 
   async function loadConversations() {
-    const { data: convs } = await supabase
-      .from('conversations')
-      .select('*, conversation_members(user_id)')
-      .order('updated_at', { ascending: false })
+    try {
+      const { data: convs, error } = await supabase
+        .from('conversations')
+        .select('*, conversation_members(user_id)')
+        .order('updated_at', { ascending: false })
 
-    if (!convs?.length) { setLoading(false); return }
-    setConversations(convs)
+      if (error) throw error
+      if (!convs?.length) return
 
-    const { data: msgs } = await supabase
-      .from('messages')
-      .select('conversation_id, body, display_name, image_url, created_at')
-      .in('conversation_id', convs.map(c => c.id))
-      .order('created_at', { ascending: false })
+      setConversations(convs)
 
-    const map = {}
-    for (const msg of msgs ?? []) {
-      if (!map[msg.conversation_id]) map[msg.conversation_id] = msg
+      const { data: msgs } = await supabase
+        .from('messages')
+        .select('conversation_id, body, display_name, image_url, created_at')
+        .in('conversation_id', convs.map(c => c.id))
+        .order('created_at', { ascending: false })
+        .limit(200)
+
+      const map = {}
+      for (const msg of msgs ?? []) {
+        if (!map[msg.conversation_id]) map[msg.conversation_id] = msg
+      }
+      setLastMessages(map)
+    } catch (err) {
+      console.error('loadConversations:', err)
+    } finally {
+      setLoading(false)
     }
-    setLastMessages(map)
-    setLoading(false)
   }
 
   useEffect(() => {
-    if (!groupId) return
+    if (!groupId) {
+      setLoading(false)
+      return
+    }
+    setLoading(true)
     onRead?.()
     loadConversations()
 
