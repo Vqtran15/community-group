@@ -3,7 +3,7 @@ import { NotePencil, X } from '@phosphor-icons/react'
 import { useModalClose } from '../hooks/useModalClose.js'
 import { supabase } from '../lib/supabase.js'
 
-export default function NotesModal({ session, onClose }) {
+export default function NotesModal({ groupId, onClose }) {
   const [closing, close] = useModalClose(onClose)
   const [content, setContent] = useState('')
   const [loading, setLoading] = useState(true)
@@ -12,9 +12,9 @@ export default function NotesModal({ session, onClose }) {
 
   useEffect(() => {
     supabase
-      .from('profiles')
+      .from('community_groups')
       .select('notes')
-      .eq('user_id', session.user.id)
+      .eq('id', groupId)
       .single()
       .then(({ data }) => {
         setContent(data?.notes ?? '')
@@ -25,9 +25,9 @@ export default function NotesModal({ session, onClose }) {
   async function handleSave() {
     setSaving(true)
     await supabase
-      .from('profiles')
+      .from('community_groups')
       .update({ notes: content })
-      .eq('user_id', session.user.id)
+      .eq('id', groupId)
     setSaving(false)
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
@@ -42,10 +42,13 @@ export default function NotesModal({ session, onClose }) {
         className={`bg-white rounded-2xl shadow-xl w-full max-w-sm ${closing ? 'animate-modal-out' : 'animate-modal-in'}`}
         onClick={e => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between p-5 pb-4">
-          <div className="flex items-center gap-2">
-            <NotePencil size={20} weight="fill" className="text-jade" />
-            <h2 className="text-lg font-bold text-stone-800">Notes</h2>
+        <div className="flex items-center justify-between p-5 pb-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <NotePencil size={20} weight="fill" className="text-jade" />
+              <h2 className="text-lg font-bold text-stone-800">Public Notes</h2>
+            </div>
+            <p className="text-xs text-stone-400 mt-0.5 ml-7">Shared with all group members</p>
           </div>
           <button
             onClick={close}
@@ -59,7 +62,7 @@ export default function NotesModal({ session, onClose }) {
           <textarea
             value={content}
             onChange={e => setContent(e.target.value)}
-            placeholder={loading ? 'Loading…' : 'Write your notes here…'}
+            placeholder={loading ? 'Loading…' : 'Write notes for your group…'}
             disabled={loading}
             rows={8}
             className="w-full border border-stone-200 rounded-xl px-4 py-3 text-sm text-stone-800 placeholder:text-stone-400 resize-none focus:outline-none focus:ring-2 focus:ring-jade focus:border-transparent disabled:opacity-50"

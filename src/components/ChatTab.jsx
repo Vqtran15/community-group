@@ -396,7 +396,7 @@ export default function ChatTab({ session, displayName, groupId, onRead }) {
       </div>
 
       {notesOpen && (
-        <NotesModal session={session} onClose={() => setNotesOpen(false)} />
+        <NotesModal groupId={groupId} onClose={() => setNotesOpen(false)} />
       )}
     </div>
   )
