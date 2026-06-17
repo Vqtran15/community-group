@@ -62,17 +62,27 @@ end;
 $$;
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- 5. RLS on conversations
+-- 5. Helper: check conversation membership without going through RLS.
+--    Using security definer breaks the circular reference that would otherwise
+--    occur between the conversations and conversation_members RLS policies.
+-- ─────────────────────────────────────────────────────────────────────────────
+create or replace function is_conversation_member(conv_id uuid)
+returns boolean language sql stable security definer set search_path = public as $$
+  select exists (
+    select 1 from conversation_members
+    where conversation_id = conv_id and user_id = auth.uid()
+  )
+$$;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- 6. RLS on conversations
 -- ─────────────────────────────────────────────────────────────────────────────
 alter table conversations enable row level security;
 
 create policy "select own conversations" on conversations
   for select using (
     community_group_id = current_community_group_id()
-    and exists (
-      select 1 from conversation_members cm
-      where cm.conversation_id = id and cm.user_id = auth.uid()
-    )
+    and is_conversation_member(id)
   );
 
 create policy "insert conversations in own group" on conversations
@@ -81,24 +91,17 @@ create policy "insert conversations in own group" on conversations
 create policy "update own conversations" on conversations
   for update using (
     community_group_id = current_community_group_id()
-    and exists (
-      select 1 from conversation_members cm
-      where cm.conversation_id = id and cm.user_id = auth.uid()
-    )
+    and is_conversation_member(id)
   );
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- 6. RLS on conversation_members
+-- 7. RLS on conversation_members
 -- ─────────────────────────────────────────────────────────────────────────────
 alter table conversation_members enable row level security;
 
 create policy "view members of own conversations" on conversation_members
   for select using (
-    exists (
-      select 1 from conversation_members cm2
-      where cm2.conversation_id = conversation_members.conversation_id
-        and cm2.user_id = auth.uid()
-    )
+    is_conversation_member(conversation_id)
   );
 
 create policy "join conversations in own group" on conversation_members
@@ -114,7 +117,7 @@ create policy "leave own conversations" on conversation_members
   for delete using (user_id = auth.uid());
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- 7. Update messages RLS to use conversation membership
+-- 8. Update messages RLS to use conversation membership
 -- ─────────────────────────────────────────────────────────────────────────────
 drop policy if exists "group members" on messages;
 
@@ -135,7 +138,7 @@ create policy "conversation members" on messages
   );
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- 8. Trigger: bump conversations.updated_at whenever a message is inserted
+-- 9. Trigger: bump conversations.updated_at whenever a message is inserted
 -- ─────────────────────────────────────────────────────────────────────────────
 create or replace function touch_conversation()
 returns trigger language plpgsql security definer as $$
@@ -150,7 +153,7 @@ create trigger on_message_insert
   for each row execute function touch_conversation();
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- 9. Trigger: auto-add new profiles to all existing group conversations
+-- 10. Trigger: auto-add new profiles to all existing group conversations
 -- ─────────────────────────────────────────────────────────────────────────────
 create or replace function add_member_to_group_conversations()
 returns trigger language plpgsql security definer as $$
@@ -170,7 +173,7 @@ create trigger on_profile_insert
   for each row execute function add_member_to_group_conversations();
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- 10. find_or_create_dm RPC — finds existing DM or creates one atomically
+-- 11. find_or_create_dm RPC — finds existing DM or creates one atomically
 -- ─────────────────────────────────────────────────────────────────────────────
 create or replace function find_or_create_dm(other_user_id uuid)
 returns uuid language plpgsql security definer
@@ -217,7 +220,7 @@ end;
 $$;
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- 11. Realtime for new tables
+-- 12. Realtime for new tables
 -- ─────────────────────────────────────────────────────────────────────────────
 alter publication supabase_realtime add table conversations;
 alter publication supabase_realtime add table conversation_members;
