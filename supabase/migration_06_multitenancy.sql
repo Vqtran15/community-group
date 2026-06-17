@@ -41,8 +41,8 @@ create policy "owner" on birthdays
   for all using (user_id = auth.uid()) with check (user_id = auth.uid());
 
 -- 5. Enable realtime for all data tables (scoped to authenticated user via RLS)
-alter publication supabase_realtime add table meal_pages, serving_pages, serving_signups, birthdays;
--- Note: signups was already added in migration_01
+alter publication supabase_realtime add table meal_pages, serving_pages, birthdays;
+-- Note: signups and serving_signups were already added in earlier migrations
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- BEFORE RUNNING: In Supabase dashboard → Authentication → Settings:
