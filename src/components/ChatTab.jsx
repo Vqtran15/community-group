@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { ChatCircleDots, PaperPlaneTilt, Image as ImageIcon, X } from '@phosphor-icons/react'
 import { supabase } from '../lib/supabase.js'
+import { useEntranceAnimation } from '../hooks/useEntranceAnimation.js'
 
 const AVATAR_COLORS = ['bg-jade', 'bg-coral', 'bg-lagoon-700']
 function avatarColor(userId) {
@@ -41,9 +42,10 @@ export default function ChatTab({ session, displayName, groupId, onRead }) {
   const [text, setText]               = useState('')
   const [sending, setSending]         = useState(false)
   const [imagePreview, setImagePreview] = useState(null)
-  const scrollRef  = useRef(null)
+  const scrollRef    = useRef(null)
   const fileInputRef = useRef(null)
   const textareaRef  = useRef(null)
+  const { className: headerClass } = useEntranceAnimation('/chat', 0, { direction: 'left' })
 
   useEffect(() => {
     if (!groupId) return
@@ -65,7 +67,7 @@ export default function ChatTab({ session, displayName, groupId, onRead }) {
         event: 'INSERT', schema: 'public', table: 'messages',
         filter: `community_group_id=eq.${groupId}`,
       }, ({ new: msg }) => {
-        setMessages(prev => [...prev, msg])
+        setMessages(prev => [...prev, { ...msg, _isNew: true }])
       })
       .subscribe()
 
@@ -152,7 +154,7 @@ export default function ChatTab({ session, displayName, groupId, onRead }) {
       style={{ height: 'calc(100svh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 62px)' }}
     >
       {/* Header */}
-      <div className="max-w-3xl mx-auto w-full px-4 pt-6 pb-3 shrink-0 flex items-center gap-3">
+      <div className={`max-w-3xl mx-auto w-full px-4 pt-6 pb-3 shrink-0 flex items-center gap-3 ${headerClass}`}>
         <ChatCircleDots size={32} weight="fill" className="text-jade shrink-0" />
         <h1 className="text-3xl font-bold text-stone-800">Chat</h1>
       </div>
@@ -190,10 +192,10 @@ export default function ChatTab({ session, displayName, groupId, onRead }) {
               const isFirstInGroup = !prevIsMsg || prevMsg.msg.user_id !== msg.user_id
 
               return (
-                <div key={msg.id} className={`flex gap-2 ${isOwn ? 'justify-end' : 'justify-start'} ${isLastInGroup ? 'mb-2' : 'mb-0'}`}>
+                <div key={msg.id} className={`flex gap-2 ${isOwn ? 'justify-end' : 'justify-start'} ${isLastInGroup ? 'mb-2' : 'mb-0'} ${msg._isNew ? 'animate-message-in' : ''}`}>
                   {!isOwn && (
-                    <div className="w-8 shrink-0 self-end mb-0.5">
-                      {isLastInGroup && <Initials name={msg.display_name} userId={msg.user_id} />}
+                    <div className="w-8 shrink-0 self-start mt-1">
+                      {isFirstInGroup && <Initials name={msg.display_name} userId={msg.user_id} />}
                     </div>
                   )}
                   <div className={`flex flex-col max-w-[75%] ${isOwn ? 'items-end' : 'items-start'}`}>
