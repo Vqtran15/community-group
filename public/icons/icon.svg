@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Background -->
+  <rect width="512" height="512" rx="114" fill="#C4622D"/>
+  <!-- Subtle inner glow ring -->
+  <circle cx="256" cy="256" r="190" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="2"/>
+  <!-- Three people / community icon -->
+  <!-- Center person -->
+  <circle cx="256" cy="188" r="58" fill="white"/>
+  <path d="M148 370 Q148 290 256 290 Q364 290 364 370" fill="white"/>
+  <!-- Left person (smaller, behind) -->
+  <circle cx="136" cy="208" r="42" fill="rgba(255,255,255,0.65)"/>
+  <path d="M60 370 Q60 306 136 306 Q180 306 200 326" fill="rgba(255,255,255,0.65)"/>
+  <!-- Right person (smaller, behind) -->
+  <circle cx="376" cy="208" r="42" fill="rgba(255,255,255,0.65)"/>
+  <path d="M452 370 Q452 306 376 306 Q332 306 312 326" fill="rgba(255,255,255,0.65)"/>
+</svg>

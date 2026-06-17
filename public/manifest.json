@@ -1,0 +1,19 @@
+{
+  "name": "Community Group",
+  "short_name": "Community",
+  "description": "Chat, sign up for meals and service, and remember birthdays with your community group.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FBF8F4",
+  "theme_color": "#FBF8F4",
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
