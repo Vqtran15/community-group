@@ -173,7 +173,7 @@ if (error) throw error
           </div>
         ) : (
           <div className="max-w-3xl mx-auto w-full divide-y divide-stone-100">
-            {conversations.map(conv => {
+            {conversations.map((conv, i) => {
               const name = convName(conv)
               const isDm = conv.type === 'direct'
               const otherId = isDm
@@ -183,7 +183,8 @@ if (error) throw error
                 <button
                   key={conv.id}
                   onClick={() => onSelect(conv)}
-                  className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-white/70 transition-colors text-left"
+                  className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-white/70 transition-colors text-left animate-fade-up"
+                  style={{ animationDelay: `${Math.min(i, 8) * 55}ms` }}
                 >
                   <div className={`w-11 h-11 rounded-full flex items-center justify-center shrink-0 text-white text-sm font-bold ${isDm ? avatarColor(otherId ?? '') : 'bg-jade'}`}>
                     {isDm ? initials(name) : <Users size={22} weight="fill" />}
