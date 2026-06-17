@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef } from 'react'
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
-import { ForkKnife, HandHeart, Confetti } from '@phosphor-icons/react'
+import { ForkKnife, HandHeart, Confetti, ChatCircleDots } from '@phosphor-icons/react'
 import { formatDate } from './utils/dates.js'
 import { getUpcomingBirthdays } from './utils/birthdays.js'
 import { supabase } from './lib/supabase.js'
 import RotationTab from './RotationTab.jsx'
 import BirthdayTab from './components/BirthdayTab.jsx'
 import BirthdayBanner from './components/BirthdayBanner.jsx'
+import ChatTab from './components/ChatTab.jsx'
 import AuthPage from './components/AuthPage.jsx'
 
 const TABS = [
@@ -39,11 +40,8 @@ const TABS = [
       defaultTitle: dateStr => `Service Night — ${formatDate(dateStr)}`,
     },
   },
-  {
-    path: '/birthdays',
-    shortLabel: 'Birthdays',
-    Icon: Confetti,
-  },
+  { path: '/chat',      shortLabel: 'Chat',      Icon: ChatCircleDots },
+  { path: '/birthdays', shortLabel: 'Birthdays', Icon: Confetti },
 ]
 
 const PATHS = TABS.map(t => t.path)
@@ -51,12 +49,16 @@ const PATHS = TABS.map(t => t.path)
 export default function App() {
   const navigate = useNavigate()
   const location = useLocation()
-  const prevIndexRef = useRef(PATHS.indexOf(location.pathname))
-  const [enterFrom, setEnterFrom] = useState('right')
-  const [birthdays, setBirthdays] = useState([])
-  const [session, setSession] = useState(null)
-  const [authLoading, setAuthLoading] = useState(true)
-  const [profile, setProfile] = useState(null)
+  const prevIndexRef  = useRef(PATHS.indexOf(location.pathname))
+  const locationRef   = useRef(location.pathname)
+  const [enterFrom, setEnterFrom]       = useState('right')
+  const [birthdays, setBirthdays]       = useState([])
+  const [session, setSession]           = useState(null)
+  const [authLoading, setAuthLoading]   = useState(true)
+  const [profile, setProfile]           = useState(null)
+  const [hasUnreadChat, setHasUnreadChat] = useState(false)
+
+  useEffect(() => { locationRef.current = location.pathname }, [location.pathname])
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -74,14 +76,15 @@ export default function App() {
     if (!session) return
     supabase
       .from('profiles')
-      .select('display_name, community_groups(name)')
+      .select('display_name, community_group_id, community_groups(name)')
       .eq('user_id', session.user.id)
       .single()
       .then(({ data }) => { if (data) setProfile(data) })
   }, [session])
 
   const displayName = profile?.display_name ?? ''
-  const groupName = profile?.community_groups?.name ?? session?.user?.user_metadata?.community_group_name ?? ''
+  const groupName   = profile?.community_groups?.name ?? session?.user?.user_metadata?.community_group_name ?? ''
+  const groupId     = profile?.community_group_id ?? null
 
   useEffect(() => {
     if (!session) return
@@ -91,19 +94,35 @@ export default function App() {
       .channel('birthdays-global')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'birthdays' },
         ({ eventType, new: next, old: prev }) => {
-          if (eventType === 'INSERT') {
-            setBirthdays(b => b.some(r => r.id === next.id) ? b : [...b, next])
-          } else if (eventType === 'UPDATE') {
-            setBirthdays(b => b.map(r => r.id === next.id ? next : r))
-          } else if (eventType === 'DELETE') {
-            setBirthdays(b => b.filter(r => r.id !== prev.id))
-          }
+          if (eventType === 'INSERT') setBirthdays(b => b.some(r => r.id === next.id) ? b : [...b, next])
+          else if (eventType === 'UPDATE') setBirthdays(b => b.map(r => r.id === next.id ? next : r))
+          else if (eventType === 'DELETE') setBirthdays(b => b.filter(r => r.id !== prev.id))
         },
       )
       .subscribe()
 
     return () => supabase.removeChannel(channel)
   }, [session])
+
+  // Unread chat tracking — fires for any new message while not on /chat
+  useEffect(() => {
+    if (!groupId) return
+    const channel = supabase
+      .channel(`chat-unread:${groupId}`)
+      .on('postgres_changes', {
+        event: 'INSERT', schema: 'public', table: 'messages',
+        filter: `community_group_id=eq.${groupId}`,
+      }, () => {
+        if (locationRef.current !== '/chat') setHasUnreadChat(true)
+      })
+      .subscribe()
+    return () => supabase.removeChannel(channel)
+  }, [groupId])
+
+  // Clear unread dot when visiting chat
+  useEffect(() => {
+    if (location.pathname === '/chat') setHasUnreadChat(false)
+  }, [location.pathname])
 
   if (authLoading) {
     return (
@@ -116,26 +135,29 @@ export default function App() {
   if (!session) return <AuthPage />
 
   const upcoming = getUpcomingBirthdays(birthdays)
+  const isChat = location.pathname === '/chat'
 
   function handleTabChange(path) {
     const newIndex = PATHS.indexOf(path)
     setEnterFrom(newIndex > prevIndexRef.current ? 'right' : 'left')
     prevIndexRef.current = newIndex
+    if (path === '/chat') setHasUnreadChat(false)
     navigate(path)
   }
 
   return (
     <div className="min-h-screen bg-sunrise-50 overflow-x-hidden" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
-      <BirthdayBanner upcoming={upcoming} />
+      {!isChat && <BirthdayBanner upcoming={upcoming} />}
 
       <div
         key={location.pathname}
-        className={`pb-24 ${enterFrom === 'right' ? 'animate-slide-in-right' : 'animate-slide-in-left'}`}
+        className={`${isChat ? '' : 'pb-24'} ${enterFrom === 'right' ? 'animate-slide-in-right' : 'animate-slide-in-left'}`}
       >
         <Routes>
           <Route path="/" element={<Navigate to="/meals" replace />} />
-          <Route path="/meals" element={<RotationTab config={TABS[0].config} revealKey="/meals" groupName={groupName} displayName={displayName} />} />
-          <Route path="/services" element={<RotationTab config={TABS[1].config} revealKey="/services" groupName={groupName} displayName={displayName} />} />
+          <Route path="/meals"     element={<RotationTab config={TABS[0].config} revealKey="/meals"     groupName={groupName} displayName={displayName} />} />
+          <Route path="/services"  element={<RotationTab config={TABS[1].config} revealKey="/services"  groupName={groupName} displayName={displayName} />} />
+          <Route path="/chat"      element={<ChatTab session={session} displayName={displayName} groupId={groupId} onRead={() => setHasUnreadChat(false)} />} />
           <Route path="/birthdays" element={<BirthdayTab birthdays={birthdays} onBirthdaysChange={setBirthdays} revealKey="/birthdays" />} />
         </Routes>
       </div>
@@ -156,6 +178,9 @@ export default function App() {
                 <t.Icon size={26} weight={active ? 'fill' : 'regular'} />
                 {t.path === '/birthdays' && upcoming.length > 0 && (
                   <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-lagoon rounded-full border-2 border-white" />
+                )}
+                {t.path === '/chat' && hasUnreadChat && (
+                  <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-coral rounded-full border-2 border-white" />
                 )}
               </span>
               <span className={`text-[10px] font-medium tracking-wide ${active ? 'text-jade' : ''}`}>{t.shortLabel}</span>
