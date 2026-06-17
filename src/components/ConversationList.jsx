@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { ChatCircleDots, PencilSimple, Users } from '@phosphor-icons/react'
+import { useState, useEffect, useRef } from 'react'
+import { ChatCircleDots, PencilSimple, Users, MagnifyingGlass, X } from '@phosphor-icons/react'
 import { supabase } from '../lib/supabase.js'
 import { useEntranceAnimation } from '../hooks/useEntranceAnimation.js'
 import { useModalClose } from '../hooks/useModalClose.js'
@@ -30,6 +30,9 @@ export default function ConversationList({ session, groupId, members, enterClass
   const [newDmOpen, setNewDmOpen]         = useState(false)
   const [starting, setStarting]           = useState(false)
   const [dmClosing, closeDm]              = useModalClose(() => setNewDmOpen(false))
+  const [searchOpen, setSearchOpen]       = useState(false)
+  const [searchQuery, setSearchQuery]     = useState('')
+  const searchInputRef                    = useRef(null)
 
   const myId = session.user.id
   const { className: headerClass } = useEntranceAnimation('/chat', 0, { direction: 'left' })
@@ -150,15 +153,48 @@ if (error) throw error
           <ChatCircleDots size={32} weight="fill" className="text-jade shrink-0" />
           <h1 className="text-3xl font-bold text-stone-800">Chat</h1>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              setSearchOpen(v => !v)
+              setSearchQuery('')
+              if (!searchOpen) setTimeout(() => searchInputRef.current?.focus(), 50)
+            }}
+            className={`w-9 h-9 flex items-center justify-center rounded-xl transition-colors ${searchOpen ? 'bg-jade text-white' : 'text-stone-400 hover:text-stone-700 hover:bg-stone-100'}`}
+          >
+            <MagnifyingGlass size={20} weight={searchOpen ? 'fill' : 'regular'} />
+          </button>
           <button
             onClick={() => setNewDmOpen(true)}
-            className="w-9 h-9 flex items-center justify-center rounded-xl text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors"
+            className="flex items-center gap-1.5 px-3 h-9 rounded-xl bg-jade text-white text-sm font-medium hover:bg-jade-700 transition-colors"
           >
-            <PencilSimple size={20} />
+            <PencilSimple size={16} weight="bold" />
+            New message
           </button>
         </div>
       </div>
+
+      {/* Search bar */}
+      {searchOpen && (
+        <div className="max-w-3xl mx-auto w-full px-4 pb-3 shrink-0 animate-fade-up">
+          <div className="relative">
+            <MagnifyingGlass size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none" />
+            <input
+              ref={searchInputRef}
+              type="text"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder="Search conversations…"
+              className="w-full bg-white border border-stone-200 rounded-xl pl-9 pr-9 py-2.5 text-sm text-stone-800 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-jade focus:border-transparent"
+            />
+            {searchQuery && (
+              <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600">
+                <X size={14} weight="bold" />
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* List */}
       <div className="flex-1 overflow-y-auto">
@@ -173,7 +209,12 @@ if (error) throw error
           </div>
         ) : (
           <div className="max-w-3xl mx-auto w-full divide-y divide-stone-100">
-            {conversations.map((conv, i) => {
+            {conversations.filter(conv => {
+              if (!searchQuery.trim()) return true
+              const q = searchQuery.toLowerCase()
+              return convName(conv).toLowerCase().includes(q) ||
+                lastPreview(conv).toLowerCase().includes(q)
+            }).map((conv, i) => {
               const name = convName(conv)
               const isDm = conv.type === 'direct'
               const otherId = isDm
