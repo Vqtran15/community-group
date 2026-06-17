@@ -9,6 +9,7 @@ import BirthdayTab from './components/BirthdayTab.jsx'
 import BirthdayBanner from './components/BirthdayBanner.jsx'
 import ChatTab from './components/ChatTab.jsx'
 import AuthPage from './components/AuthPage.jsx'
+import ResetPasswordPage from './components/ResetPasswordPage.jsx'
 
 const TABS = [
   {
@@ -57,6 +58,7 @@ export default function App() {
   const [authLoading, setAuthLoading]   = useState(true)
   const [profile, setProfile]           = useState(null)
   const [hasUnreadChat, setHasUnreadChat] = useState(false)
+  const [isRecovery, setIsRecovery] = useState(false)
 
   useEffect(() => { locationRef.current = location.pathname }, [location.pathname])
 
@@ -65,9 +67,10 @@ export default function App() {
       setSession(session)
       setAuthLoading(false)
     })
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session)
-      if (!session) setProfile(null)
+      if (event === 'PASSWORD_RECOVERY') setIsRecovery(true)
+      if (!session) { setProfile(null); setIsRecovery(false) }
     })
     return () => subscription.unsubscribe()
   }, [])
@@ -133,6 +136,7 @@ export default function App() {
   }
 
   if (!session) return <AuthPage />
+  if (isRecovery) return <ResetPasswordPage onDone={() => setIsRecovery(false)} />
 
   const upcoming = getUpcomingBirthdays(birthdays)
   const isChat = location.pathname === '/chat'

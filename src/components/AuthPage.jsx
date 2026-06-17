@@ -1,6 +1,8 @@
 import { useState } from 'react'
-import { ForkKnife } from '@phosphor-icons/react'
+import { ForkKnife, ArrowLeft } from '@phosphor-icons/react'
 import { supabase } from '../lib/supabase.js'
+
+const MODE_ORDER = { signin: 0, forgot: 1, signup: 2 }
 
 export default function AuthPage() {
   const [mode, setMode] = useState('signin')
@@ -12,8 +14,12 @@ export default function AuthPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [notice, setNotice] = useState(null)
+  const [animKey, setAnimKey] = useState(0)
+  const [animDir, setAnimDir] = useState(null)
 
   function switchMode(next) {
+    setAnimDir(MODE_ORDER[next] > MODE_ORDER[mode] ? 'right' : 'left')
+    setAnimKey(k => k + 1)
     setMode(next)
     setError(null)
     setNotice(null)
@@ -24,6 +30,20 @@ export default function AuthPage() {
     setLoading(true)
     setError(null)
     setNotice(null)
+
+    if (mode === 'forgot') {
+      const { error: err } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin,
+      })
+      if (err) {
+        setError(err.message)
+      } else {
+        switchMode('signin')
+        setNotice('Check your email for a password reset link.')
+      }
+      setLoading(false)
+      return
+    }
 
     if (mode === 'signup') {
       if (password !== confirmPassword) {
@@ -39,13 +59,12 @@ export default function AuthPage() {
       if (err) {
         setError(err.message)
       } else {
-        setNotice('Account created! Check your email to confirm, then sign in.')
         switchMode('signin')
+        setNotice('Account created! Check your email to confirm, then sign in.')
       }
     } else {
       const { error: err } = await supabase.auth.signInWithPassword({ email, password })
       if (err) setError(err.message)
-      // on success, App.jsx's onAuthStateChange fires and shows the main app
     }
 
     setLoading(false)
@@ -53,6 +72,9 @@ export default function AuthPage() {
 
   const inputClass =
     'w-full border border-stone-200 rounded-xl px-3.5 py-2.5 text-stone-800 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-jade focus:border-transparent transition-shadow text-sm'
+
+  const animClass =
+    animDir === 'right' ? 'animate-slide-in-right' : animDir === 'left' ? 'animate-slide-in-left' : ''
 
   return (
     <div
@@ -66,18 +88,20 @@ export default function AuthPage() {
             <ForkKnife size={32} weight="fill" className="text-white" />
           </div>
           <h1 className="text-2xl font-bold text-stone-800">Community Group</h1>
-          <p className="text-stone-500 mt-1 text-sm">Sign up for meals and service, chat with your group, and remember birthdays!</p>
+          <p className="text-stone-500 mt-1 text-sm">
+            Sign up for meals and service, chat with your group, and remember birthdays!
+          </p>
         </div>
 
         {/* Card */}
         <div className="bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden">
-          {/* Mode toggle */}
+          {/* Mode toggle tabs */}
           <div className="flex border-b border-stone-100">
             <button
               type="button"
               onClick={() => switchMode('signin')}
               className={`flex-1 py-3.5 text-sm font-semibold transition-colors ${
-                mode === 'signin'
+                mode === 'signin' || mode === 'forgot'
                   ? 'text-jade border-b-2 border-jade -mb-px'
                   : 'text-stone-400 hover:text-stone-600'
               }`}
@@ -97,114 +121,156 @@ export default function AuthPage() {
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="p-6 space-y-4">
-            {mode === 'signup' && (
-              <>
-                <div>
-                  <label className="block text-xs font-semibold text-stone-600 mb-1.5 uppercase tracking-wide">
-                    Your Name
-                  </label>
-                  <input
-                    type="text"
-                    value={displayName}
-                    onChange={e => setDisplayName(e.target.value)}
-                    placeholder="e.g. Jane Smith"
-                    required
-                    autoComplete="name"
-                    className={inputClass}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-stone-600 mb-1.5 uppercase tracking-wide">
-                    Community Group Name
-                  </label>
-                  <input
-                    type="text"
-                    value={groupName}
-                    onChange={e => setGroupName(e.target.value)}
-                    placeholder="e.g. Lake Oswego & SE"
-                    required
-                    autoComplete="organization"
-                    className={inputClass}
-                  />
-                </div>
-              </>
-            )}
+          {/* Animated form content */}
+          <div key={animKey} className={animClass}>
+            <form onSubmit={handleSubmit} className="p-6 space-y-4">
 
-            <div>
-              <label className="block text-xs font-semibold text-stone-600 mb-1.5 uppercase tracking-wide">
-                Email
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                required
-                autoComplete="email"
-                className={inputClass}
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-stone-600 mb-1.5 uppercase tracking-wide">
-                Password
-              </label>
-              <input
-                type="password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-                minLength={6}
-                autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
-                className={inputClass}
-              />
-              {mode === 'signup' && (
-                <p className="text-xs text-stone-400 mt-1">Minimum 6 characters</p>
+              {/* Forgot password sub-header */}
+              {mode === 'forgot' && (
+                <div className="flex items-center gap-2 -mt-1 mb-1">
+                  <button
+                    type="button"
+                    onClick={() => switchMode('signin')}
+                    className="text-stone-400 hover:text-stone-700 transition-colors p-1 -ml-1 rounded-lg hover:bg-stone-100"
+                  >
+                    <ArrowLeft size={16} weight="bold" />
+                  </button>
+                  <span className="text-sm font-semibold text-stone-700">Forgot your password?</span>
+                </div>
               )}
-            </div>
 
-            {mode === 'signup' && (
+              {/* Signup-only fields */}
+              {mode === 'signup' && (
+                <>
+                  <div>
+                    <label className="block text-xs font-semibold text-stone-600 mb-1.5 uppercase tracking-wide">
+                      Your Name
+                    </label>
+                    <input
+                      type="text"
+                      value={displayName}
+                      onChange={e => setDisplayName(e.target.value)}
+                      placeholder="e.g. Jane Smith"
+                      required
+                      autoComplete="name"
+                      className={inputClass}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-stone-600 mb-1.5 uppercase tracking-wide">
+                      Community Group Name
+                    </label>
+                    <input
+                      type="text"
+                      value={groupName}
+                      onChange={e => setGroupName(e.target.value)}
+                      placeholder="e.g. Lake Oswego & SE"
+                      required
+                      autoComplete="organization"
+                      className={inputClass}
+                    />
+                  </div>
+                </>
+              )}
+
+              {/* Email */}
               <div>
                 <label className="block text-xs font-semibold text-stone-600 mb-1.5 uppercase tracking-wide">
-                  Confirm Password
+                  Email
                 </label>
                 <input
-                  type="password"
-                  value={confirmPassword}
-                  onChange={e => setConfirmPassword(e.target.value)}
-                  placeholder="••••••••"
+                  type="email"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  placeholder="you@example.com"
                   required
-                  autoComplete="new-password"
+                  autoComplete="email"
                   className={inputClass}
                 />
+                {mode === 'forgot' && (
+                  <p className="text-xs text-stone-400 mt-1">We'll send a reset link to this address.</p>
+                )}
               </div>
-            )}
 
-            {error && (
-              <div className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
-                {error}
-              </div>
-            )}
-            {notice && (
-              <div className="text-sm text-jade bg-green-50 border border-green-200 rounded-xl px-4 py-3">
-                {notice}
-              </div>
-            )}
+              {/* Password (not shown in forgot mode) */}
+              {mode !== 'forgot' && (
+                <div>
+                  <label className="block text-xs font-semibold text-stone-600 mb-1.5 uppercase tracking-wide">
+                    Password
+                  </label>
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    required
+                    minLength={6}
+                    autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
+                    className={inputClass}
+                  />
+                  {mode === 'signup' && (
+                    <p className="text-xs text-stone-400 mt-1">Minimum 6 characters</p>
+                  )}
+                </div>
+              )}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3 bg-jade hover:bg-jade-700 active:scale-[0.98] text-white font-semibold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-            >
-              {loading
-                ? 'Please wait…'
-                : mode === 'signin'
-                ? 'Sign In'
-                : 'Create Account'}
-            </button>
-          </form>
+              {/* Confirm password (signup only) */}
+              {mode === 'signup' && (
+                <div>
+                  <label className="block text-xs font-semibold text-stone-600 mb-1.5 uppercase tracking-wide">
+                    Confirm Password
+                  </label>
+                  <input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={e => setConfirmPassword(e.target.value)}
+                    placeholder="••••••••"
+                    required
+                    autoComplete="new-password"
+                    className={inputClass}
+                  />
+                </div>
+              )}
+
+              {/* Forgot password link */}
+              {mode === 'signin' && (
+                <div className="flex justify-end -mt-2">
+                  <button
+                    type="button"
+                    onClick={() => switchMode('forgot')}
+                    className="text-xs text-stone-400 hover:text-jade transition-colors"
+                  >
+                    Forgot password?
+                  </button>
+                </div>
+              )}
+
+              {error && (
+                <div className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+                  {error}
+                </div>
+              )}
+              {notice && (
+                <div className="text-sm text-jade bg-green-50 border border-green-200 rounded-xl px-4 py-3">
+                  {notice}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-3 bg-jade hover:bg-jade-700 active:scale-[0.98] text-white font-semibold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+              >
+                {loading
+                  ? 'Please wait…'
+                  : mode === 'signin'
+                  ? 'Sign In'
+                  : mode === 'forgot'
+                  ? 'Send Reset Link'
+                  : 'Create Account'}
+              </button>
+            </form>
+          </div>
         </div>
 
         {mode === 'signup' && (

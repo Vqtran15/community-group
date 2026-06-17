@@ -1,9 +1,25 @@
-import { GearSix, ListBullets, PencilSimple, SignOut } from '@phosphor-icons/react'
+import { useState } from 'react'
+import { GearSix, ListBullets, PencilSimple, SignOut, Trash } from '@phosphor-icons/react'
 import { useModalClose } from '../hooks/useModalClose.js'
 import { supabase } from '../lib/supabase.js'
 
 export default function SettingsModal({ editLabel, groupName, displayName, onEditPage, onManagePages, onClose }) {
   const [closing, close] = useModalClose(onClose)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState(null)
+
+  async function handleDeleteAccount() {
+    setDeleting(true)
+    setDeleteError(null)
+    const { error } = await supabase.rpc('delete_current_user')
+    if (error) {
+      setDeleteError(error.message)
+      setDeleting(false)
+      return
+    }
+    await supabase.auth.signOut()
+  }
 
   return (
     <div
@@ -66,7 +82,7 @@ export default function SettingsModal({ editLabel, groupName, displayName, onEdi
             <p className="text-xs font-semibold text-stone-400 uppercase tracking-wide pb-2">
               Account
             </p>
-            <div className="flex items-center justify-between px-1">
+            <div className="flex items-center justify-between px-1 mb-3">
               <div className="min-w-0 mr-3">
                 {displayName && <p className="text-sm font-medium text-stone-700 truncate">{displayName}</p>}
                 {groupName && <p className="text-xs text-stone-400 truncate">{groupName}</p>}
@@ -79,6 +95,41 @@ export default function SettingsModal({ editLabel, groupName, displayName, onEdi
                 Sign out
               </button>
             </div>
+
+            {showDeleteConfirm ? (
+              <div className="p-4 bg-red-50 border border-red-200 rounded-xl space-y-3">
+                <p className="text-sm font-semibold text-red-700">Delete your account?</p>
+                <p className="text-xs text-red-600">
+                  This permanently deletes your account and all your data. This cannot be undone.
+                </p>
+                {deleteError && (
+                  <p className="text-xs text-red-700 bg-red-100 rounded-lg px-3 py-2">{deleteError}</p>
+                )}
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => { setShowDeleteConfirm(false); setDeleteError(null) }}
+                    className="flex-1 py-2 text-sm font-medium text-stone-600 bg-white border border-stone-200 rounded-lg hover:bg-stone-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleDeleteAccount}
+                    disabled={deleting}
+                    className="flex-1 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors disabled:opacity-50"
+                  >
+                    {deleting ? 'Deleting…' : 'Delete Forever'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors"
+              >
+                <Trash size={15} weight="bold" />
+                Delete my account
+              </button>
+            )}
           </div>
         </div>
       </div>
