@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { getNextTuesday, toDateString } from '../utils/dates.js'
+import { useModalClose } from '../hooks/useModalClose.js'
 
 function findNextAvailableTuesday(existingDates) {
   let d = getNextTuesday()
@@ -10,6 +11,7 @@ function findNextAvailableTuesday(existingDates) {
 }
 
 export default function AddPageModal({ noun, defaultTitle, pages = [], onClose, onSave, existingDates }) {
+  const [closing, close] = useModalClose(onClose)
   const defaultDate = findNextAvailableTuesday(existingDates)
   const defaultDateStr = toDateString(defaultDate)
 
@@ -72,17 +74,17 @@ export default function AddPageModal({ noun, defaultTitle, pages = [], onClose, 
 
   return (
     <div
-      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-      onClick={onClose}
+      className={`fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 ${closing ? 'animate-overlay-out' : 'animate-overlay-in'}`}
+      onClick={close}
     >
       <div
-        className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] flex flex-col"
+        className={`bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] flex flex-col ${closing ? 'animate-modal-out' : 'animate-modal-in'}`}
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center justify-between p-6 pb-0 shrink-0">
           <h2 className="text-xl font-bold text-stone-800">Add Page</h2>
           <button
-            onClick={onClose}
+            onClick={close}
             className="text-stone-400 hover:text-stone-600 text-2xl leading-none w-8 h-8 flex items-center justify-center rounded-full hover:bg-stone-100"
           >
             &times;

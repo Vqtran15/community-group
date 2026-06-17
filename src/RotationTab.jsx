@@ -201,7 +201,7 @@ export default function RotationTab({ config, revealKey, groupName = '' }) {
           />
         ) : (
           <div className="max-w-3xl mx-auto px-4 py-20 text-center">
-            <p className="text-5xl mb-4">🍽</p>
+            <div className="flex justify-center mb-4"><Icon size={56} weight="fill" className="text-stone-300" /></div>
             <h2 className="text-xl font-semibold text-stone-700 mb-2">No pages yet</h2>
             <p className="text-stone-500 text-sm mb-6">Add your first page to get started.</p>
             <button

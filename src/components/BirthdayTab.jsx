@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Cake } from '@phosphor-icons/react'
 import { supabase } from '../lib/supabase.js'
 import { daysUntilNext, formatBirthdayDate } from '../utils/birthdays.js'
 import BirthdayCard from './BirthdayCard.jsx'
@@ -218,8 +219,8 @@ export default function BirthdayTab({ birthdays, onBirthdaysChange, revealKey })
 
       {sorted.length === 0 ? (
         <div className="text-center py-16 text-stone-400">
-          <div className="text-4xl mb-3">🎂</div>
-          <p className="text-sm">Add birthdays to get reminded 2 weeks before</p>
+          <div className="flex justify-center mb-3"><Cake size={48} weight="fill" className="text-stone-300" /></div>
+          <p className="text-sm">Add birthdays to get reminded 30 days before</p>
         </div>
       ) : (
         <div className="space-y-2">
