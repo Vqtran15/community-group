@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef, useLayoutEffect } from 'react'
 import {
   PaperPlaneTilt, Image as ImageIcon, X,
-  MagnifyingGlass, ArrowDown, Trash, ArrowLeft,
+  MagnifyingGlass, ArrowDown, Trash, ArrowLeft, NotePencil,
 } from '@phosphor-icons/react'
 import { supabase } from '../lib/supabase.js'
+import NotesModal from './NotesModal.jsx'
 
 const PAGE_SIZE = 50
 const EMOJIS = ['👍', '❤️', '😂', '😮', '😢', '🙏']
@@ -83,6 +84,7 @@ export default function ChatView({ conversation, session, displayName, groupId, 
   const [activeMsg, setActiveMsg]       = useState(null)
   const [menuPos, setMenuPos]           = useState(null)
   const [showMoreEmojis, setShowMoreEmojis] = useState(false)
+  const [notesOpen, setNotesOpen]           = useState(false)
 
   const scrollRef          = useRef(null)
   const fileInputRef       = useRef(null)
@@ -410,6 +412,14 @@ export default function ChatView({ conversation, session, displayName, groupId, 
           <ArrowLeft size={20} weight="bold" />
         </button>
         <h1 className="text-xl font-bold text-stone-800 flex-1 truncate">{title}</h1>
+        {conversation.type === 'group' && (
+          <button
+            onClick={() => setNotesOpen(true)}
+            className="w-9 h-9 flex items-center justify-center rounded-xl text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors"
+          >
+            <NotePencil size={20} />
+          </button>
+        )}
         <button
           onClick={toggleSearch}
           className={`w-9 h-9 flex items-center justify-center rounded-xl transition-colors ${searchOpen ? 'bg-jade text-white' : 'text-stone-400 hover:text-stone-700 hover:bg-stone-100'}`}
@@ -682,6 +692,8 @@ export default function ChatView({ conversation, session, displayName, groupId, 
       {activeMsg && (
         <div className="fixed inset-0 z-20" onClick={() => { setActiveMsg(null); setMenuPos(null); setShowMoreEmojis(false) }} />
       )}
+
+      {notesOpen && <NotesModal groupId={groupId} onClose={() => setNotesOpen(false)} />}
     </div>
   )
 }

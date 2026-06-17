@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react'
-import { ChatCircleDots, NotePencil, PencilSimple, Users } from '@phosphor-icons/react'
+import { ChatCircleDots, PencilSimple, Users } from '@phosphor-icons/react'
 import { supabase } from '../lib/supabase.js'
 import { useEntranceAnimation } from '../hooks/useEntranceAnimation.js'
-import NotesModal from './NotesModal.jsx'
 
 const AVATAR_COLORS = ['bg-jade', 'bg-coral', 'bg-lagoon-700']
 function avatarColor(userId) {
@@ -28,7 +27,6 @@ export default function ConversationList({ session, groupId, members, onSelect, 
   const [lastMessages, setLastMessages]   = useState({})
   const [loading, setLoading]             = useState(true)
   const [newDmOpen, setNewDmOpen]         = useState(false)
-  const [notesOpen, setNotesOpen]         = useState(false)
   const [starting, setStarting]           = useState(false)
 
   const myId = session.user.id
@@ -152,12 +150,6 @@ if (error) throw error
         </div>
         <div className="flex items-center gap-1">
           <button
-            onClick={() => setNotesOpen(true)}
-            className="w-9 h-9 flex items-center justify-center rounded-xl text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors"
-          >
-            <NotePencil size={20} />
-          </button>
-          <button
             onClick={() => setNewDmOpen(true)}
             className="w-9 h-9 flex items-center justify-center rounded-xl text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors"
           >
@@ -252,7 +244,6 @@ if (error) throw error
         </div>
       )}
 
-      {notesOpen && <NotesModal groupId={groupId} onClose={() => setNotesOpen(false)} />}
     </div>
   )
 }
