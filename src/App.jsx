@@ -7,6 +7,7 @@ import { supabase } from './lib/supabase.js'
 import RotationTab from './RotationTab.jsx'
 import BirthdayTab from './components/BirthdayTab.jsx'
 import BirthdayBanner from './components/BirthdayBanner.jsx'
+import AuthPage from './components/AuthPage.jsx'
 
 const TABS = [
   {
@@ -53,8 +54,24 @@ export default function App() {
   const prevIndexRef = useRef(PATHS.indexOf(location.pathname))
   const [enterFrom, setEnterFrom] = useState('right')
   const [birthdays, setBirthdays] = useState([])
+  const [session, setSession] = useState(null)
+  const [authLoading, setAuthLoading] = useState(true)
 
   useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session)
+      setAuthLoading(false)
+    })
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session)
+    })
+    return () => subscription.unsubscribe()
+  }, [])
+
+  const groupName = session?.user?.user_metadata?.community_group_name ?? ''
+
+  useEffect(() => {
+    if (!session) return
     supabase.from('birthdays').select('*').then(({ data }) => setBirthdays(data ?? []))
 
     const channel = supabase
@@ -73,7 +90,17 @@ export default function App() {
       .subscribe()
 
     return () => supabase.removeChannel(channel)
-  }, [])
+  }, [session])
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-sunrise-50 flex items-center justify-center">
+        <div className="text-stone-400 animate-pulse text-sm">Loading…</div>
+      </div>
+    )
+  }
+
+  if (!session) return <AuthPage />
 
   const upcoming = getUpcomingBirthdays(birthdays)
 
@@ -94,8 +121,8 @@ export default function App() {
       >
         <Routes>
           <Route path="/" element={<Navigate to="/meals" replace />} />
-          <Route path="/meals" element={<RotationTab config={TABS[0].config} revealKey="/meals" />} />
-          <Route path="/services" element={<RotationTab config={TABS[1].config} revealKey="/services" />} />
+          <Route path="/meals" element={<RotationTab config={TABS[0].config} revealKey="/meals" groupName={groupName} />} />
+          <Route path="/services" element={<RotationTab config={TABS[1].config} revealKey="/services" groupName={groupName} />} />
           <Route path="/birthdays" element={<BirthdayTab birthdays={birthdays} onBirthdaysChange={setBirthdays} revealKey="/birthdays" />} />
         </Routes>
       </div>
