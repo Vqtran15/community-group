@@ -56,6 +56,7 @@ export default function App() {
   const [birthdays, setBirthdays] = useState([])
   const [session, setSession] = useState(null)
   const [authLoading, setAuthLoading] = useState(true)
+  const [profile, setProfile] = useState(null)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -64,11 +65,23 @@ export default function App() {
     })
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session)
+      if (!session) setProfile(null)
     })
     return () => subscription.unsubscribe()
   }, [])
 
-  const groupName = session?.user?.user_metadata?.community_group_name ?? ''
+  useEffect(() => {
+    if (!session) return
+    supabase
+      .from('profiles')
+      .select('display_name, community_groups(name)')
+      .eq('user_id', session.user.id)
+      .single()
+      .then(({ data }) => { if (data) setProfile(data) })
+  }, [session])
+
+  const displayName = profile?.display_name ?? ''
+  const groupName = profile?.community_groups?.name ?? session?.user?.user_metadata?.community_group_name ?? ''
 
   useEffect(() => {
     if (!session) return
@@ -121,8 +134,8 @@ export default function App() {
       >
         <Routes>
           <Route path="/" element={<Navigate to="/meals" replace />} />
-          <Route path="/meals" element={<RotationTab config={TABS[0].config} revealKey="/meals" groupName={groupName} />} />
-          <Route path="/services" element={<RotationTab config={TABS[1].config} revealKey="/services" groupName={groupName} />} />
+          <Route path="/meals" element={<RotationTab config={TABS[0].config} revealKey="/meals" groupName={groupName} displayName={displayName} />} />
+          <Route path="/services" element={<RotationTab config={TABS[1].config} revealKey="/services" groupName={groupName} displayName={displayName} />} />
           <Route path="/birthdays" element={<BirthdayTab birthdays={birthdays} onBirthdaysChange={setBirthdays} revealKey="/birthdays" />} />
         </Routes>
       </div>

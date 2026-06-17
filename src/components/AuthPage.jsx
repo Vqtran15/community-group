@@ -4,9 +4,11 @@ import { supabase } from '../lib/supabase.js'
 
 export default function AuthPage() {
   const [mode, setMode] = useState('signin')
+  const [displayName, setDisplayName] = useState('')
   const [groupName, setGroupName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [notice, setNotice] = useState(null)
@@ -24,10 +26,15 @@ export default function AuthPage() {
     setNotice(null)
 
     if (mode === 'signup') {
+      if (password !== confirmPassword) {
+        setError('Passwords do not match.')
+        setLoading(false)
+        return
+      }
       const { error: err } = await supabase.auth.signUp({
         email,
         password,
-        options: { data: { community_group_name: groupName.trim() } },
+        options: { data: { display_name: displayName.trim(), community_group_name: groupName.trim() } },
       })
       if (err) {
         setError(err.message)
@@ -58,8 +65,8 @@ export default function AuthPage() {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-jade mb-4">
             <ForkKnife size={32} weight="fill" className="text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-stone-800">Community Potluck</h1>
-          <p className="text-stone-500 mt-1 text-sm">Meal planning for your community group</p>
+          <h1 className="text-2xl font-bold text-stone-800">Community Group</h1>
+          <p className="text-stone-500 mt-1 text-sm">Sign up for meals and service, chat with your group, and remember birthdays!</p>
         </div>
 
         {/* Card */}
@@ -92,20 +99,36 @@ export default function AuthPage() {
 
           <form onSubmit={handleSubmit} className="p-6 space-y-4">
             {mode === 'signup' && (
-              <div>
-                <label className="block text-xs font-semibold text-stone-600 mb-1.5 uppercase tracking-wide">
-                  Community Group Name
-                </label>
-                <input
-                  type="text"
-                  value={groupName}
-                  onChange={e => setGroupName(e.target.value)}
-                  placeholder="e.g. Grace Church"
-                  required
-                  autoComplete="organization"
-                  className={inputClass}
-                />
-              </div>
+              <>
+                <div>
+                  <label className="block text-xs font-semibold text-stone-600 mb-1.5 uppercase tracking-wide">
+                    Your Name
+                  </label>
+                  <input
+                    type="text"
+                    value={displayName}
+                    onChange={e => setDisplayName(e.target.value)}
+                    placeholder="e.g. Jane Smith"
+                    required
+                    autoComplete="name"
+                    className={inputClass}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-stone-600 mb-1.5 uppercase tracking-wide">
+                    Community Group Name
+                  </label>
+                  <input
+                    type="text"
+                    value={groupName}
+                    onChange={e => setGroupName(e.target.value)}
+                    placeholder="e.g. Lake Oswego & SE"
+                    required
+                    autoComplete="organization"
+                    className={inputClass}
+                  />
+                </div>
+              </>
             )}
 
             <div>
@@ -142,6 +165,23 @@ export default function AuthPage() {
               )}
             </div>
 
+            {mode === 'signup' && (
+              <div>
+                <label className="block text-xs font-semibold text-stone-600 mb-1.5 uppercase tracking-wide">
+                  Confirm Password
+                </label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={e => setConfirmPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  autoComplete="new-password"
+                  className={inputClass}
+                />
+              </div>
+            )}
+
             {error && (
               <div className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
                 {error}
@@ -169,7 +209,7 @@ export default function AuthPage() {
 
         {mode === 'signup' && (
           <p className="text-center text-xs text-stone-400 mt-4 px-4">
-            Each community group has its own private data. Share your login with your group members so everyone can manage the schedule.
+            Everyone in your group creates their own account using the same Community Group Name.
           </p>
         )}
       </div>

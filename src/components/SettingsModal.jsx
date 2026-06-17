@@ -2,7 +2,7 @@ import { GearSix, ListBullets, PencilSimple, SignOut } from '@phosphor-icons/rea
 import { useModalClose } from '../hooks/useModalClose.js'
 import { supabase } from '../lib/supabase.js'
 
-export default function SettingsModal({ editLabel, groupName, onEditPage, onManagePages, onClose }) {
+export default function SettingsModal({ editLabel, groupName, displayName, onEditPage, onManagePages, onClose }) {
   const [closing, close] = useModalClose(onClose)
 
   return (
@@ -67,12 +67,13 @@ export default function SettingsModal({ editLabel, groupName, onEditPage, onMana
               Account
             </p>
             <div className="flex items-center justify-between px-1">
-              {groupName && (
-                <span className="text-sm font-medium text-stone-600 truncate mr-3">{groupName}</span>
-              )}
+              <div className="min-w-0 mr-3">
+                {displayName && <p className="text-sm font-medium text-stone-700 truncate">{displayName}</p>}
+                {groupName && <p className="text-xs text-stone-400 truncate">{groupName}</p>}
+              </div>
               <button
                 onClick={() => supabase.auth.signOut()}
-                className="flex items-center gap-1.5 text-sm text-stone-400 hover:text-red-500 transition-colors ml-auto shrink-0"
+                className="flex items-center gap-1.5 text-sm text-stone-400 hover:text-red-500 transition-colors shrink-0"
               >
                 <SignOut size={15} weight="bold" />
                 Sign out
