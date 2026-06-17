@@ -174,8 +174,9 @@ export default function RotationTab({ config, revealKey, groupName = '', display
         </button>
         <button
           onClick={() => setShowSettings(true)}
-          className="w-9 h-9 flex items-center justify-center rounded-xl text-stone-400 hover:text-stone-700 hover:bg-black/5 transition-colors"
+          className="flex items-center gap-2 px-2 py-1.5 rounded-xl text-stone-400 hover:text-stone-700 hover:bg-black/5 transition-colors"
         >
+          {displayName && <span className="text-sm font-semibold text-jade">{displayName}</span>}
           <GearSix size={20} weight="regular" />
         </button>
       </div>
@@ -203,7 +204,13 @@ export default function RotationTab({ config, revealKey, groupName = '', display
           <div className="max-w-3xl mx-auto px-4 py-20 text-center">
             <div className="flex justify-center mb-4"><Icon size={56} weight="fill" className="text-stone-300" /></div>
             <h2 className="text-xl font-semibold text-stone-700 mb-2">No pages yet</h2>
-            <p className="text-stone-500 text-sm mb-6">Add your first page to get started.</p>
+            <p className="text-stone-500 text-sm mb-2">Add your first page to get started.</p>
+            {autoFill && (
+              <p className="text-stone-400 text-xs mb-6 max-w-xs mx-auto">
+                Once you have pages, new meals are automatically scheduled each week using your existing meals as a rotating template — so upcoming weeks are always ready.
+              </p>
+            )}
+            {!autoFill && <div className="mb-6" />}
             <button
               onClick={() => setShowAddModal(true)}
               className="px-5 py-2.5 bg-jade hover:bg-jade-700 text-white font-medium rounded-lg transition-colors"
