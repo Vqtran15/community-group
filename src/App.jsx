@@ -10,6 +10,7 @@ import BirthdayBanner from './components/BirthdayBanner.jsx'
 import ChatTab from './components/ChatTab.jsx'
 import AuthPage from './components/AuthPage.jsx'
 import ResetPasswordPage from './components/ResetPasswordPage.jsx'
+import WelcomeSplash from './components/WelcomeSplash.jsx'
 
 const TABS = [
   {
@@ -59,6 +60,7 @@ export default function App() {
   const [profile, setProfile]           = useState(null)
   const [hasUnreadChat, setHasUnreadChat] = useState(false)
   const [isRecovery, setIsRecovery] = useState(false)
+  const [showWelcome, setShowWelcome] = useState(false)
 
   useEffect(() => { locationRef.current = location.pathname }, [location.pathname])
 
@@ -82,7 +84,15 @@ export default function App() {
       .select('display_name, community_group_id, community_groups(name)')
       .eq('user_id', session.user.id)
       .single()
-      .then(({ data }) => { if (data) setProfile(data) })
+      .then(({ data }) => {
+        if (!data) return
+        setProfile(data)
+        const key = `cg_welcomed_${session.user.id}`
+        if (!localStorage.getItem(key)) {
+          localStorage.setItem(key, '1')
+          setShowWelcome(true)
+        }
+      })
   }, [session])
 
   const displayName = profile?.display_name ?? ''
@@ -165,6 +175,10 @@ export default function App() {
           <Route path="/birthdays" element={<BirthdayTab birthdays={birthdays} onBirthdaysChange={setBirthdays} revealKey="/birthdays" />} />
         </Routes>
       </div>
+
+      {showWelcome && (
+        <WelcomeSplash groupName={groupName} onDone={() => setShowWelcome(false)} />
+      )}
 
       <nav
         className="fixed bottom-0 inset-x-0 bg-white border-t border-stone-200 z-40 flex"
