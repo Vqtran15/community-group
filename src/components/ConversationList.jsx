@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { ChatCircleDots, PencilSimple, Users, MagnifyingGlass, X, Check } from '@phosphor-icons/react'
+import { ChatCircleDots, PencilSimple, Users, MagnifyingGlass, X, Check, Trash } from '@phosphor-icons/react'
 import { supabase } from '../lib/supabase.js'
 import { useEntranceAnimation } from '../hooks/useEntranceAnimation.js'
 import { useModalClose } from '../hooks/useModalClose.js'
@@ -359,7 +359,7 @@ export default function ConversationList({ session, groupId, members, enterClass
               return (
                 <div
                   key={conv.id}
-                  className="relative overflow-hidden animate-fade-up"
+                  className="relative overflow-hidden animate-fade-up group"
                   style={{ animationDelay: `${Math.min(i, 8) * 55}ms` }}
                 >
                   {/* Delete button revealed on swipe */}
@@ -387,6 +387,7 @@ export default function ConversationList({ session, groupId, members, enterClass
                     }}
                   >
                     <div className="relative shrink-0">
+
                       <div className={`w-11 h-11 rounded-full flex items-center justify-center text-white text-sm font-bold ${isDm ? avatarColor(otherId ?? '') : 'bg-jade'}`}>
                         {isDm ? initials(name) : <Users size={22} weight="fill" />}
                       </div>
@@ -408,6 +409,16 @@ export default function ConversationList({ session, groupId, members, enterClass
                       </p>
                     </div>
                   </button>
+
+                  {/* Desktop hover trash icon */}
+                  {deletable && !isSwiped && (
+                    <button
+                      onClick={() => setConfirmDeleteConv(conv)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 z-10 opacity-0 group-hover:opacity-100 transition-opacity w-8 h-8 rounded-xl flex items-center justify-center text-stone-300 hover:text-red-500 hover:bg-red-50"
+                    >
+                      <Trash size={15} />
+                    </button>
+                  )}
                 </div>
               )
             })}
