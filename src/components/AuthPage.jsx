@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { ForkKnife, ArrowLeft } from '@phosphor-icons/react'
 import { supabase } from '../lib/supabase.js'
 
@@ -8,6 +8,9 @@ export default function AuthPage() {
   const [mode, setMode] = useState('signin')
   const [displayName, setDisplayName] = useState('')
   const [groupName, setGroupName] = useState('')
+  const [groupMode, setGroupMode] = useState('select') // 'select' | 'new'
+  const [existingGroups, setExistingGroups] = useState([])
+  const [groupsLoaded, setGroupsLoaded] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -17,12 +20,39 @@ export default function AuthPage() {
   const [animKey, setAnimKey] = useState(0)
   const [animDir, setAnimDir] = useState(null)
 
+  useEffect(() => {
+    if (mode !== 'signup') return
+    supabase
+      .from('community_groups')
+      .select('name')
+      .order('name')
+      .then(({ data }) => {
+        setExistingGroups((data ?? []).map(g => g.name))
+        setGroupsLoaded(true)
+      })
+  }, [mode])
+
   function switchMode(next) {
     setAnimDir(MODE_ORDER[next] > MODE_ORDER[mode] ? 'right' : 'left')
     setAnimKey(k => k + 1)
     setMode(next)
     setError(null)
     setNotice(null)
+    // Reset group fields when going to signup
+    if (next === 'signup') {
+      setGroupName('')
+      setGroupMode('select')
+    }
+  }
+
+  function handleGroupSelect(value) {
+    if (value === '__new__') {
+      setGroupMode('new')
+      setGroupName('')
+    } else {
+      setGroupMode('select')
+      setGroupName(value)
+    }
   }
 
   async function handleSubmit(e) {
@@ -51,6 +81,11 @@ export default function AuthPage() {
         setLoading(false)
         return
       }
+      if (!groupName.trim()) {
+        setError('Please select or enter a Community Group Name.')
+        setLoading(false)
+        return
+      }
       const { error: err } = await supabase.auth.signUp({
         email,
         password,
@@ -73,8 +108,13 @@ export default function AuthPage() {
   const inputClass =
     'w-full border border-stone-200 rounded-xl px-3.5 py-2.5 text-stone-800 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-jade focus:border-transparent transition-shadow text-sm'
 
+  const selectClass =
+    'w-full border border-stone-200 rounded-xl px-3.5 py-2.5 text-stone-800 focus:outline-none focus:ring-2 focus:ring-jade focus:border-transparent transition-shadow text-sm bg-white cursor-pointer'
+
   const animClass =
     animDir === 'right' ? 'animate-slide-in-right' : animDir === 'left' ? 'animate-slide-in-left' : ''
+
+  const showDropdown = mode === 'signup' && groupsLoaded && existingGroups.length > 0
 
   return (
     <div
@@ -156,19 +196,47 @@ export default function AuthPage() {
                       className={inputClass}
                     />
                   </div>
+
                   <div>
                     <label className="block text-xs font-semibold text-stone-600 mb-1.5 uppercase tracking-wide">
-                      Community Group Name
+                      Community Group
                     </label>
-                    <input
-                      type="text"
-                      value={groupName}
-                      onChange={e => setGroupName(e.target.value)}
-                      placeholder="e.g. Lake Oswego & SE"
-                      required
-                      autoComplete="organization"
-                      className={inputClass}
-                    />
+                    {showDropdown ? (
+                      <>
+                        <select
+                          value={groupMode === 'new' ? '__new__' : groupName}
+                          onChange={e => handleGroupSelect(e.target.value)}
+                          className={selectClass}
+                        >
+                          <option value="">Select your group…</option>
+                          {existingGroups.map(name => (
+                            <option key={name} value={name}>{name}</option>
+                          ))}
+                          <option disabled>──────────────</option>
+                          <option value="__new__">+ Create a new group</option>
+                        </select>
+                        {groupMode === 'new' && (
+                          <input
+                            type="text"
+                            value={groupName}
+                            onChange={e => setGroupName(e.target.value)}
+                            placeholder="New group name…"
+                            autoFocus
+                            className={`${inputClass} mt-2`}
+                          />
+                        )}
+                      </>
+                    ) : (
+                      <input
+                        type="text"
+                        value={groupName}
+                        onChange={e => setGroupName(e.target.value)}
+                        placeholder="e.g. Lake Oswego & SE"
+                        required
+                        autoComplete="organization"
+                        className={inputClass}
+                      />
+                    )}
                   </div>
                 </>
               )}
@@ -192,7 +260,7 @@ export default function AuthPage() {
                 )}
               </div>
 
-              {/* Password (not shown in forgot mode) */}
+              {/* Password */}
               {mode !== 'forgot' && (
                 <div>
                   <label className="block text-xs font-semibold text-stone-600 mb-1.5 uppercase tracking-wide">
@@ -214,7 +282,7 @@ export default function AuthPage() {
                 </div>
               )}
 
-              {/* Confirm password (signup only) */}
+              {/* Confirm password */}
               {mode === 'signup' && (
                 <div>
                   <label className="block text-xs font-semibold text-stone-600 mb-1.5 uppercase tracking-wide">
@@ -275,7 +343,9 @@ export default function AuthPage() {
 
         {mode === 'signup' && (
           <p className="text-center text-xs text-stone-400 mt-4 px-4">
-            Everyone in your group creates their own account using the same Community Group Name.
+            {showDropdown && groupMode !== 'new'
+              ? 'Select your group from the list, or create a new one.'
+              : 'Everyone in your group creates their own account using the same Community Group Name.'}
           </p>
         )}
       </div>
