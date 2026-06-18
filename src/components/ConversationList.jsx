@@ -36,13 +36,10 @@ export default function ConversationList({ session, groupId, members, enterClass
   const [newChatMode, setNewChatMode]         = useState('dm')
   const [selectedMembers, setSelectedMembers] = useState(new Set())
   const [creating, setCreating]               = useState(false)
-  const [swipedConvId, setSwipedConvId]       = useState(null)
   const [confirmDeleteConv, setConfirmDeleteConv] = useState(null)
   const [deleteClosing, closeDeleteConfirm]   = useModalClose(() => setConfirmDeleteConv(null))
   const [deletingConvId, setDeletingConvId]   = useState(null)
   const searchInputRef = useRef(null)
-  const touchStartX    = useRef(null)
-  const touchStartY    = useRef(null)
 
   const myId = session.user.id
   const { className: headerClass } = useEntranceAnimation('/chat', 0, { direction: 'left' })
@@ -163,23 +160,6 @@ export default function ConversationList({ session, groupId, members, enterClass
   function isMainGroupChat(conv) {
     if (conv.type !== 'group') return false
     return (conv.conversation_members?.length ?? 0) >= members.length
-  }
-
-  function handleTouchStart(e) {
-    touchStartX.current = e.touches[0].clientX
-    touchStartY.current = e.touches[0].clientY
-  }
-
-  function handleTouchEnd(e, convId) {
-    if (touchStartX.current === null) return
-    const dx = e.changedTouches[0].clientX - touchStartX.current
-    const dy = Math.abs(e.changedTouches[0].clientY - touchStartY.current)
-    if (Math.abs(dx) > dy + 10) {
-      if (dx < -50) setSwipedConvId(convId)
-      else if (dx > 20) setSwipedConvId(null)
-    }
-    touchStartX.current = null
-    touchStartY.current = null
   }
 
   async function deleteConversation(conv) {
@@ -336,10 +316,7 @@ export default function ConversationList({ session, groupId, members, enterClass
             <p className="text-sm">No conversations yet</p>
           </div>
         ) : (
-          <div
-            className="max-w-3xl mx-auto w-full divide-y divide-stone-100"
-            onScroll={() => setSwipedConvId(null)}
-          >
+          <div className="max-w-3xl mx-auto w-full divide-y divide-stone-100">
             {conversations.filter(conv => {
               if (!searchQuery.trim()) return true
               const q = searchQuery.toLowerCase()
@@ -351,43 +328,22 @@ export default function ConversationList({ session, groupId, members, enterClass
               const otherId = isDm
                 ? conv.conversation_members?.find(m => m.user_id !== myId)?.user_id
                 : null
-              const unread      = isUnread(conv)
-              const deletable   = !isMainGroupChat(conv)
-              const isSwiped    = swipedConvId === conv.id
-              const isDeleting  = deletingConvId === conv.id
+              const unread     = isUnread(conv)
+              const deletable  = !isMainGroupChat(conv)
+              const isDeleting = deletingConvId === conv.id
 
               return (
                 <div
                   key={conv.id}
-                  className="relative overflow-hidden animate-fade-up group"
+                  className="flex items-stretch hover:bg-white/70 transition-colors bg-sunrise-50 animate-fade-up"
                   style={{ animationDelay: `${Math.min(i, 8) * 55}ms` }}
                 >
-                  {/* Delete button revealed on swipe */}
-                  {deletable && (
-                    <button
-                      onClick={() => setConfirmDeleteConv(conv)}
-                      className="absolute right-0 inset-y-0 w-20 bg-red-500 hover:bg-red-600 flex items-center justify-center text-white text-sm font-semibold transition-colors"
-                    >
-                      {isDeleting ? '…' : 'Delete'}
-                    </button>
-                  )}
-
-                  {/* Row */}
+                  {/* Main row */}
                   <button
-                    onClick={() => {
-                      if (isSwiped) { setSwipedConvId(null); return }
-                      onSelect(conv)
-                    }}
-                    onTouchStart={deletable ? handleTouchStart : undefined}
-                    onTouchEnd={deletable ? e => handleTouchEnd(e, conv.id) : undefined}
-                    className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-white/70 transition-colors text-left bg-sunrise-50"
-                    style={{
-                      transform: isSwiped ? 'translateX(-80px)' : 'translateX(0)',
-                      transition: 'transform 0.2s ease',
-                    }}
+                    onClick={() => onSelect(conv)}
+                    className="flex-1 flex items-center gap-3 px-4 py-3.5 text-left min-w-0"
                   >
                     <div className="relative shrink-0">
-
                       <div className={`w-11 h-11 rounded-full flex items-center justify-center text-white text-sm font-bold ${isDm ? avatarColor(otherId ?? '') : 'bg-jade'}`}>
                         {isDm ? initials(name) : <Users size={22} weight="fill" />}
                       </div>
@@ -410,13 +366,13 @@ export default function ConversationList({ session, groupId, members, enterClass
                     </div>
                   </button>
 
-                  {/* Desktop hover trash icon */}
-                  {deletable && !isSwiped && (
+                  {/* Trash button */}
+                  {deletable && (
                     <button
                       onClick={() => setConfirmDeleteConv(conv)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 z-10 opacity-0 group-hover:opacity-100 transition-opacity w-8 h-8 rounded-xl flex items-center justify-center text-stone-300 hover:text-red-500 hover:bg-red-50"
+                      className="shrink-0 px-4 flex items-center text-stone-300 hover:text-red-500 active:text-red-600 transition-colors"
                     >
-                      <Trash size={15} />
+                      {isDeleting ? <span className="text-xs text-stone-300">…</span> : <Trash size={16} />}
                     </button>
                   )}
                 </div>
@@ -425,11 +381,6 @@ export default function ConversationList({ session, groupId, members, enterClass
           </div>
         )}
       </div>
-
-      {/* Backdrop to close swiped row */}
-      {swipedConvId && (
-        <div className="fixed inset-0 z-10" onClick={() => setSwipedConvId(null)} />
-      )}
 
       {/* Delete confirmation */}
       {confirmDeleteConv && (
