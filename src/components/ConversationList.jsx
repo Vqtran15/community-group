@@ -36,7 +36,13 @@ export default function ConversationList({ session, groupId, members, enterClass
   const [newChatMode, setNewChatMode]         = useState('dm')
   const [selectedMembers, setSelectedMembers] = useState(new Set())
   const [creating, setCreating]               = useState(false)
-  const searchInputRef                        = useRef(null)
+  const [swipedConvId, setSwipedConvId]       = useState(null)
+  const [confirmDeleteConv, setConfirmDeleteConv] = useState(null)
+  const [deleteClosing, closeDeleteConfirm]   = useModalClose(() => setConfirmDeleteConv(null))
+  const [deletingConvId, setDeletingConvId]   = useState(null)
+  const searchInputRef = useRef(null)
+  const touchStartX    = useRef(null)
+  const touchStartY    = useRef(null)
 
   const myId = session.user.id
   const { className: headerClass } = useEntranceAnimation('/chat', 0, { direction: 'left' })
@@ -152,6 +158,39 @@ export default function ConversationList({ session, groupId, members, enterClass
     const readAt = lastReadAt[conv.id]
     if (!readAt) return true
     return new Date(lastMsg.created_at) > new Date(readAt)
+  }
+
+  function isMainGroupChat(conv) {
+    if (conv.type !== 'group') return false
+    return (conv.conversation_members?.length ?? 0) >= members.length
+  }
+
+  function handleTouchStart(e) {
+    touchStartX.current = e.touches[0].clientX
+    touchStartY.current = e.touches[0].clientY
+  }
+
+  function handleTouchEnd(e, convId) {
+    if (touchStartX.current === null) return
+    const dx = e.changedTouches[0].clientX - touchStartX.current
+    const dy = Math.abs(e.changedTouches[0].clientY - touchStartY.current)
+    if (Math.abs(dx) > dy + 10) {
+      if (dx < -50) setSwipedConvId(convId)
+      else if (dx > 20) setSwipedConvId(null)
+    }
+    touchStartX.current = null
+    touchStartY.current = null
+  }
+
+  async function deleteConversation(conv) {
+    setDeletingConvId(conv.id)
+    closeDeleteConfirm()
+    const { error } = await supabase.rpc('delete_conversation', { conv_id: conv.id })
+    if (!error) {
+      setConversations(prev => prev.filter(c => c.id !== conv.id))
+      setLastMessages(prev => { const n = { ...prev }; delete n[conv.id]; return n })
+    }
+    setDeletingConvId(null)
   }
 
   function openModal() {
@@ -297,53 +336,123 @@ export default function ConversationList({ session, groupId, members, enterClass
             <p className="text-sm">No conversations yet</p>
           </div>
         ) : (
-          <div className="max-w-3xl mx-auto w-full divide-y divide-stone-100">
+          <div
+            className="max-w-3xl mx-auto w-full divide-y divide-stone-100"
+            onScroll={() => setSwipedConvId(null)}
+          >
             {conversations.filter(conv => {
               if (!searchQuery.trim()) return true
               const q = searchQuery.toLowerCase()
               return convName(conv).toLowerCase().includes(q) ||
                 lastPreview(conv).toLowerCase().includes(q)
             }).map((conv, i) => {
-              const name = convName(conv)
-              const isDm = conv.type === 'direct'
+              const name    = convName(conv)
+              const isDm    = conv.type === 'direct'
               const otherId = isDm
                 ? conv.conversation_members?.find(m => m.user_id !== myId)?.user_id
                 : null
-              const unread = isUnread(conv)
+              const unread      = isUnread(conv)
+              const deletable   = !isMainGroupChat(conv)
+              const isSwiped    = swipedConvId === conv.id
+              const isDeleting  = deletingConvId === conv.id
+
               return (
-                <button
+                <div
                   key={conv.id}
-                  onClick={() => onSelect(conv)}
-                  className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-white/70 transition-colors text-left animate-fade-up"
+                  className="relative overflow-hidden animate-fade-up"
                   style={{ animationDelay: `${Math.min(i, 8) * 55}ms` }}
                 >
-                  <div className="relative shrink-0">
-                    <div className={`w-11 h-11 rounded-full flex items-center justify-center text-white text-sm font-bold ${isDm ? avatarColor(otherId ?? '') : 'bg-jade'}`}>
-                      {isDm ? initials(name) : <Users size={22} weight="fill" />}
+                  {/* Delete button revealed on swipe */}
+                  {deletable && (
+                    <button
+                      onClick={() => setConfirmDeleteConv(conv)}
+                      className="absolute right-0 inset-y-0 w-20 bg-red-500 hover:bg-red-600 flex items-center justify-center text-white text-sm font-semibold transition-colors"
+                    >
+                      {isDeleting ? '…' : 'Delete'}
+                    </button>
+                  )}
+
+                  {/* Row */}
+                  <button
+                    onClick={() => {
+                      if (isSwiped) { setSwipedConvId(null); return }
+                      onSelect(conv)
+                    }}
+                    onTouchStart={deletable ? handleTouchStart : undefined}
+                    onTouchEnd={deletable ? e => handleTouchEnd(e, conv.id) : undefined}
+                    className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-white/70 transition-colors text-left bg-sunrise-50"
+                    style={{
+                      transform: isSwiped ? 'translateX(-80px)' : 'translateX(0)',
+                      transition: 'transform 0.2s ease',
+                    }}
+                  >
+                    <div className="relative shrink-0">
+                      <div className={`w-11 h-11 rounded-full flex items-center justify-center text-white text-sm font-bold ${isDm ? avatarColor(otherId ?? '') : 'bg-jade'}`}>
+                        {isDm ? initials(name) : <Users size={22} weight="fill" />}
+                      </div>
+                      {unread && (
+                        <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-jade rounded-full border-2 border-sunrise-50" />
+                      )}
                     </div>
-                    {unread && (
-                      <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-jade rounded-full border-2 border-sunrise-50" />
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-baseline justify-between gap-2">
-                      <span className={`text-sm truncate ${unread ? 'font-bold text-stone-900' : 'font-semibold text-stone-800'}`}>
-                        {name}
-                      </span>
-                      <span className={`text-xs shrink-0 ${unread ? 'font-semibold text-jade' : 'text-stone-400'}`}>
-                        {formatTime(lastMessages[conv.id]?.created_at)}
-                      </span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-baseline justify-between gap-2">
+                        <span className={`text-sm truncate ${unread ? 'font-bold text-stone-900' : 'font-semibold text-stone-800'}`}>
+                          {name}
+                        </span>
+                        <span className={`text-xs shrink-0 ${unread ? 'font-semibold text-jade' : 'text-stone-400'}`}>
+                          {formatTime(lastMessages[conv.id]?.created_at)}
+                        </span>
+                      </div>
+                      <p className={`text-xs truncate mt-0.5 ${unread ? 'text-stone-700 font-medium' : 'text-stone-400'}`}>
+                        {lastPreview(conv)}
+                      </p>
                     </div>
-                    <p className={`text-xs truncate mt-0.5 ${unread ? 'text-stone-700 font-medium' : 'text-stone-400'}`}>
-                      {lastPreview(conv)}
-                    </p>
-                  </div>
-                </button>
+                  </button>
+                </div>
               )
             })}
           </div>
         )}
       </div>
+
+      {/* Backdrop to close swiped row */}
+      {swipedConvId && (
+        <div className="fixed inset-0 z-10" onClick={() => setSwipedConvId(null)} />
+      )}
+
+      {/* Delete confirmation */}
+      {confirmDeleteConv && (
+        <div
+          className={`fixed inset-0 bg-black/50 flex items-end z-50 ${deleteClosing ? 'animate-overlay-out' : 'animate-overlay-in'}`}
+          onClick={closeDeleteConfirm}
+        >
+          <div
+            className={`bg-white rounded-t-2xl w-full max-w-lg mx-auto pb-safe ${deleteClosing ? 'animate-modal-out' : 'animate-modal-in'}`}
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="px-5 pt-5 pb-6">
+              <h2 className="text-lg font-bold text-stone-800 mb-1">Delete conversation?</h2>
+              <p className="text-sm text-stone-500 mb-5">
+                All messages in <span className="font-semibold text-stone-700">{convName(confirmDeleteConv)}</span> will be permanently deleted for everyone.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={closeDeleteConfirm}
+                  className="flex-1 py-3 rounded-xl border border-stone-200 text-stone-600 text-sm font-medium hover:bg-stone-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => deleteConversation(confirmDeleteConv)}
+                  className="flex-1 py-3 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-semibold transition-colors"
+                >
+                  Delete forever
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* New message sheet */}
       {newDmOpen && (
