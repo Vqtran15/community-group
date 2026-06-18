@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { ForkKnife, ArrowLeft } from '@phosphor-icons/react'
+import { UsersThree, ArrowLeft } from '@phosphor-icons/react'
 import { supabase } from '../lib/supabase.js'
 
 const MODE_ORDER = { signin: 0, forgot: 1, signup: 2 }
@@ -125,7 +125,7 @@ export default function AuthPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-jade mb-4">
-            <ForkKnife size={32} weight="fill" className="text-white" />
+            <UsersThree size={32} weight="fill" className="text-white" />
           </div>
           <h1 className="text-2xl font-bold text-stone-800">Community Group</h1>
           <p className="text-stone-500 mt-1 text-sm">
