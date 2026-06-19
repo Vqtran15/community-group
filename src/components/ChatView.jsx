@@ -101,6 +101,7 @@ export default function ChatView({ conversation, session, displayName, groupId, 
   const presenceChannelRef = useRef(null)
   const typingTimeoutRef   = useRef(null)
   const longPressTimerRef  = useRef(null)
+  const longPressStartRef  = useRef(null)
   const preserveScrollRef  = useRef(null)
 
   const myId = session.user.id
@@ -402,9 +403,34 @@ export default function ChatView({ conversation, session, displayName, groupId, 
   }
 
   function startLongPress(e, msgId, isOwn) {
-    longPressTimerRef.current = setTimeout(() => openMenu(e, msgId, isOwn), 500)
+    const touch = e.touches[0]
+    const rect = e.currentTarget.getBoundingClientRect()
+    longPressStartRef.current = { x: touch.clientX, y: touch.clientY }
+    longPressTimerRef.current = setTimeout(() => {
+      longPressStartRef.current = null
+      navigator.vibrate?.(40)
+      setMenuPos({
+        bottom: Math.min(window.innerHeight - rect.top + 8, window.innerHeight - 72),
+        ...(isOwn
+          ? { right: Math.max(8, window.innerWidth - rect.right) }
+          : { left: Math.max(8, rect.left + 32) }),
+      })
+      setActiveMsg(msgId)
+      setShowMoreEmojis(false)
+    }, 500)
   }
-  function cancelLongPress() { clearTimeout(longPressTimerRef.current) }
+  function cancelLongPress(e) {
+    if (e?.type === 'touchmove') {
+      const start = longPressStartRef.current
+      if (start && e.touches[0]) {
+        const dx = e.touches[0].clientX - start.x
+        const dy = e.touches[0].clientY - start.y
+        if (dx * dx + dy * dy < 100) return
+      }
+    }
+    longPressStartRef.current = null
+    clearTimeout(longPressTimerRef.current)
+  }
 
   function handleReply(msgId) {
     const msg = messages.find(m => m.id === msgId)
@@ -561,8 +587,8 @@ export default function ChatView({ conversation, session, displayName, groupId, 
                   className={`flex gap-2 ${isOwn ? 'justify-end' : 'justify-start'} ${isLastInGroup && !hasReactions ? 'mb-2' : 'mb-0'}`}
                   onContextMenu={e => openMenu(e, msg.id, isOwn)}
                   onTouchStart={e => startLongPress(e, msg.id, isOwn)}
-                  onTouchEnd={cancelLongPress}
-                  onTouchMove={cancelLongPress}
+                  onTouchEnd={() => cancelLongPress()}
+                  onTouchMove={e => cancelLongPress(e)}
                 >
                   {!isOwn && (
                     <div className="w-8 shrink-0 self-start mt-1">
