@@ -100,8 +100,7 @@ export default function ChatView({ conversation, session, displayName, groupId, 
   const searchInputRef     = useRef(null)
   const presenceChannelRef = useRef(null)
   const typingTimeoutRef   = useRef(null)
-  const longPressTimerRef  = useRef(null)
-  const longPressStartRef  = useRef(null)
+  const lastTapRef         = useRef(null)
   const preserveScrollRef  = useRef(null)
 
   const myId = session.user.id
@@ -390,7 +389,6 @@ export default function ChatView({ conversation, session, displayName, groupId, 
   // ── Action menu ───────────────────────────────────────────────────────────
   function openMenu(e, msgId, isOwn) {
     e.preventDefault?.()
-    clearTimeout(longPressTimerRef.current)
     const rect = e.currentTarget.getBoundingClientRect()
     setMenuPos({
       bottom: Math.min(window.innerHeight - rect.top + 8, window.innerHeight - 72),
@@ -402,34 +400,16 @@ export default function ChatView({ conversation, session, displayName, groupId, 
     setShowMoreEmojis(false)
   }
 
-  function startLongPress(e, msgId, isOwn) {
-    const touch = e.touches[0]
-    const rect = e.currentTarget.getBoundingClientRect()
-    longPressStartRef.current = { x: touch.clientX, y: touch.clientY }
-    longPressTimerRef.current = setTimeout(() => {
-      longPressStartRef.current = null
-      navigator.vibrate?.(40)
-      setMenuPos({
-        bottom: Math.min(window.innerHeight - rect.top + 8, window.innerHeight - 72),
-        ...(isOwn
-          ? { right: Math.max(8, window.innerWidth - rect.right) }
-          : { left: Math.max(8, rect.left + 32) }),
-      })
-      setActiveMsg(msgId)
-      setShowMoreEmojis(false)
-    }, 500)
-  }
-  function cancelLongPress(e) {
-    if (e?.type === 'touchmove') {
-      const start = longPressStartRef.current
-      if (start && e.touches[0]) {
-        const dx = e.touches[0].clientX - start.x
-        const dy = e.touches[0].clientY - start.y
-        if (dx * dx + dy * dy < 100) return
-      }
+  function handleDoubleTap(e, msgId, isOwn) {
+    if (e.target.closest('button, a')) return
+    const now = Date.now()
+    const last = lastTapRef.current
+    if (last && last.msgId === msgId && now - last.time < 300) {
+      lastTapRef.current = null
+      openMenu(e, msgId, isOwn)
+    } else {
+      lastTapRef.current = { time: now, msgId }
     }
-    longPressStartRef.current = null
-    clearTimeout(longPressTimerRef.current)
   }
 
   function handleReply(msgId) {
@@ -586,9 +566,7 @@ export default function ChatView({ conversation, session, displayName, groupId, 
                   key={msg.id}
                   className={`flex gap-2 ${isOwn ? 'justify-end' : 'justify-start'} ${isLastInGroup && !hasReactions ? 'mb-2' : 'mb-0'}`}
                   onContextMenu={e => openMenu(e, msg.id, isOwn)}
-                  onTouchStart={e => startLongPress(e, msg.id, isOwn)}
-                  onTouchEnd={() => cancelLongPress()}
-                  onTouchMove={e => cancelLongPress(e)}
+                  onClick={e => handleDoubleTap(e, msg.id, isOwn)}
                 >
                   {!isOwn && (
                     <div className="w-8 shrink-0 self-start mt-1">
