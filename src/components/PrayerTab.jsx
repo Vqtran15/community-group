@@ -84,7 +84,7 @@ function AddFriendModal({ onClose, onSave }) {
   )
 }
 
-function PrayerModal({ friend, onClose, onFriendDelete, onCountChange }) {
+function PrayerModal({ friend, displayName, onClose, onFriendDelete, onCountChange }) {
   const [closing, close] = useModalClose(onClose)
   const [requests, setRequests]           = useState([])
   const [loading, setLoading]             = useState(true)
@@ -115,7 +115,7 @@ function PrayerModal({ friend, onClose, onFriendDelete, onCountChange }) {
     setError(null)
     const { data, error: err } = await supabase
       .from('prayer_requests')
-      .insert({ friend_id: friend.id, date, request: requestText.trim() })
+      .insert({ friend_id: friend.id, date, request: requestText.trim(), added_by: displayName })
       .select()
       .single()
     if (err) { setError(err.message); setSaving(false); return }
@@ -208,7 +208,12 @@ function PrayerModal({ friend, onClose, onFriendDelete, onCountChange }) {
               requests.map(r => (
                 <div key={r.id} className="bg-stone-50 rounded-xl p-3">
                   <div className="flex items-start justify-between gap-2 mb-1">
-                    <span className="text-xs text-stone-400">{formatDate(r.date)}</span>
+                    <div>
+                      <span className="text-xs text-stone-400">{formatDate(r.date)}</span>
+                      {r.added_by && (
+                        <span className="text-xs text-stone-400"> · {r.added_by}</span>
+                      )}
+                    </div>
                     <button
                       onClick={() => handleDeleteRequest(r.id)}
                       className="shrink-0 text-stone-300 hover:text-red-500 active:text-red-600 transition-colors p-0.5"
@@ -275,7 +280,12 @@ function FriendCard({ friend, index, onClick }) {
           <div className="w-10 h-10 rounded-full bg-jade/10 flex items-center justify-center text-jade font-bold text-sm shrink-0">
             {friend.name.charAt(0).toUpperCase()}
           </div>
-          <span className="font-semibold text-stone-800">{friend.name}</span>
+          <div>
+            <div className="font-semibold text-stone-800">{friend.name}</div>
+            {friend.added_by && (
+              <div className="text-xs text-stone-400">Added by {friend.added_by}</div>
+            )}
+          </div>
         </div>
         <span className="text-xs text-stone-400 shrink-0">
           {count === 0 ? 'No requests' : `${count} request${count !== 1 ? 's' : ''}`}
@@ -285,7 +295,7 @@ function FriendCard({ friend, index, onClick }) {
   )
 }
 
-export default function PrayerTab() {
+export default function PrayerTab({ displayName }) {
   const [friends, setFriends]           = useState([])
   const [loading, setLoading]           = useState(true)
   const [addOpen, setAddOpen]           = useState(false)
@@ -305,7 +315,7 @@ export default function PrayerTab() {
   async function handleAddFriend(name) {
     const { data, error } = await supabase
       .from('prayer_friends')
-      .insert({ name })
+      .insert({ name, added_by: displayName })
       .select('*, prayer_requests(id)')
       .single()
     if (error) throw new Error(error.message)
@@ -377,6 +387,7 @@ export default function PrayerTab() {
       {selectedFriend && (
         <PrayerModal
           friend={selectedFriend}
+          displayName={displayName}
           onClose={() => setSelectedFriend(null)}
           onFriendDelete={handleFriendDelete}
           onCountChange={handleCountChange}

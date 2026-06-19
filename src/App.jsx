@@ -179,7 +179,7 @@ export default function App() {
           <Route path="/services"  element={<RotationTab config={TABS[1].config} revealKey="/services"  groupName={groupName} displayName={displayName} />} />
           <Route path="/chat"      element={<ChatTab session={session} displayName={displayName} groupId={groupId} onRead={() => setHasUnreadChat(false)} />} />
           <Route path="/birthdays" element={<BirthdayTab birthdays={birthdays} onBirthdaysChange={setBirthdays} revealKey="/birthdays" />} />
-          <Route path="/prayer"    element={<PrayerTab />} />
+          <Route path="/prayer"    element={<PrayerTab displayName={displayName} />} />
         </Routes>
       </div>
 
