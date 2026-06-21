@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react'
-import { GearSix, ListBullets } from '@phosphor-icons/react'
+import { ListBullets } from '@phosphor-icons/react'
 import { supabase } from './lib/supabase.js'
 import { patchTitleDate, toDateString } from './utils/dates.js'
 import MealPage from './components/MealPage.jsx'
 import AddPageModal from './components/AddPageModal.jsx'
-import SettingsModal from './components/SettingsModal.jsx'
 import PagesModal from './components/PagesModal.jsx'
 import ManagePagesModal from './components/ManagePagesModal.jsx'
 
@@ -50,7 +49,7 @@ async function autoFillPages(existingPages, tables, defaultTitle) {
   return result
 }
 
-export default function RotationTab({ config, revealKey, groupName = '', displayName = '', groupId, isAdmin }) {
+export default function RotationTab({ config, revealKey, groupName = '', displayName = '' }) {
   const { label, Icon, editLabel, noun, itemNoun, pageNoun, pageNounPlural, tables, defaultTitle, autoFill = false } = config
 
   const [pages, setPages]       = useState([])
@@ -58,7 +57,6 @@ export default function RotationTab({ config, revealKey, groupName = '', display
   const [loading, setLoading]   = useState(true)
   const [error, setError]       = useState(null)
   const [showAddModal, setShowAddModal]       = useState(false)
-  const [showSettings, setShowSettings]       = useState(false)
   const [showPages, setShowPages]             = useState(false)
   const [showManagePages, setShowManagePages] = useState(false)
   const [showEditPage, setShowEditPage]       = useState(false)
@@ -174,20 +172,12 @@ export default function RotationTab({ config, revealKey, groupName = '', display
           <Icon size={32} weight="fill" className="text-jade shrink-0" />
           <h1 className="text-3xl font-bold text-stone-800">{label}</h1>
         </button>
-        <div className="flex items-center gap-1">
-          <button
-            onClick={() => setShowPages(true)}
-            className="flex items-center gap-2 px-2 py-1.5 rounded-xl text-stone-400 hover:text-stone-700 hover:bg-black/5 transition-colors"
-          >
-            <ListBullets size={20} weight="regular" />
-          </button>
-          <button
-            onClick={() => setShowSettings(true)}
-            className="flex items-center gap-2 px-2 py-1.5 rounded-xl text-stone-400 hover:text-stone-700 hover:bg-black/5 transition-colors"
-          >
-            <GearSix size={20} weight="regular" />
-          </button>
-        </div>
+        <button
+          onClick={() => setShowPages(true)}
+          className="flex items-center gap-2 px-2 py-1.5 rounded-xl text-stone-400 hover:text-stone-700 hover:bg-black/5 transition-colors"
+        >
+          <ListBullets size={20} weight="regular" />
+        </button>
       </div>
 
       <div className="pt-2">
@@ -237,16 +227,6 @@ export default function RotationTab({ config, revealKey, groupName = '', display
           onEditPage={viewedPage ? () => { setShowPages(false); setShowEditPage(true) } : undefined}
           onManagePages={() => { setShowPages(false); setShowManagePages(true) }}
           onClose={() => setShowPages(false)}
-        />
-      )}
-
-      {showSettings && (
-        <SettingsModal
-          groupName={groupName}
-          displayName={displayName}
-          groupId={groupId}
-          isAdmin={isAdmin}
-          onClose={() => setShowSettings(false)}
         />
       )}
 

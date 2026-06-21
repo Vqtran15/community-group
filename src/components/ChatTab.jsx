@@ -51,8 +51,6 @@ export default function ChatTab({ session, displayName, groupId, isAdmin, onRead
         exiting={chatExiting}
         onBack={goBack}
         onRead={onRead}
-        onMemberRemoved={userId => setMembers(prev => prev.filter(m => m.user_id !== userId))}
-        onMemberRoleChanged={(userId, newRole) => setMembers(prev => prev.map(m => m.user_id === userId ? { ...m, role: newRole } : m))}
       />
     )
   }

@@ -1,9 +1,13 @@
 import { useState, useEffect } from 'react'
-import { GearSix, SignOut, Trash } from '@phosphor-icons/react'
+import { GearSix, SignOut, Trash, Crown, X } from '@phosphor-icons/react'
 import { useModalClose } from '../hooks/useModalClose.js'
 import { supabase } from '../lib/supabase.js'
 
-export default function SettingsModal({ groupName, displayName, groupId, isAdmin, onClose }) {
+function initials(name) {
+  return (name ?? '?').split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase()
+}
+
+export default function SettingsModal({ groupName, displayName, groupId, isAdmin, userId, onClose }) {
   const [closing, close] = useModalClose(onClose)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -11,6 +15,9 @@ export default function SettingsModal({ groupName, displayName, groupId, isAdmin
   const [inviteCode, setInviteCode] = useState(null)
   const [codeCopied, setCodeCopied] = useState(false)
   const [codeRotating, setCodeRotating] = useState(false)
+  const [members, setMembers] = useState([])
+  const [settingRoleId, setSettingRoleId] = useState(null)
+  const [removingId, setRemovingId] = useState(null)
 
   useEffect(() => {
     if (!groupId) return
@@ -21,6 +28,16 @@ export default function SettingsModal({ groupName, displayName, groupId, isAdmin
       .single()
       .then(({ data }) => setInviteCode(data?.invite_code ?? null))
   }, [groupId])
+
+  useEffect(() => {
+    if (!groupId || !isAdmin) return
+    supabase
+      .from('profiles')
+      .select('user_id, display_name, role')
+      .eq('community_group_id', groupId)
+      .order('display_name')
+      .then(({ data }) => setMembers(data ?? []))
+  }, [groupId, isAdmin])
 
   function copyCode() {
     if (!inviteCode) return
@@ -35,6 +52,23 @@ export default function SettingsModal({ groupName, displayName, groupId, isAdmin
     const { data, error } = await supabase.rpc('rotate_invite_code')
     if (!error) setInviteCode(data)
     setCodeRotating(false)
+  }
+
+  async function handleSetRole(targetId, newRole) {
+    setSettingRoleId(targetId)
+    const { error } = await supabase.rpc('set_member_role', { target_user_id: targetId, new_role: newRole })
+    if (error) alert(error.message)
+    else setMembers(prev => prev.map(m => m.user_id === targetId ? { ...m, role: newRole } : m))
+    setSettingRoleId(null)
+  }
+
+  async function handleRemoveMember(targetId) {
+    const member = members.find(m => m.user_id === targetId)
+    if (!window.confirm(`Remove ${member?.display_name ?? 'this member'} from the group?`)) return
+    setRemovingId(targetId)
+    const { error } = await supabase.rpc('remove_member', { target_user_id: targetId })
+    if (!error) setMembers(prev => prev.filter(m => m.user_id !== targetId))
+    setRemovingId(null)
   }
 
   async function handleDeleteAccount() {
@@ -93,6 +127,51 @@ export default function SettingsModal({ groupName, displayName, groupId, isAdmin
                 )}
               </div>
               <p className="text-xs text-stone-400 mt-1.5">Share this code with people you want to invite.</p>
+            </div>
+          )}
+
+          {isAdmin && members.length > 0 && (
+            <div className="pt-2 border-t border-stone-100">
+              <p className="text-xs font-semibold text-stone-400 uppercase tracking-wide pb-2">Members</p>
+              <div className="space-y-0.5">
+                {members.map(m => (
+                  <div key={m.user_id} className="flex items-center gap-2.5 py-1.5">
+                    <div className="w-7 h-7 rounded-full bg-stone-100 flex items-center justify-center shrink-0">
+                      <span className="text-[11px] font-bold text-stone-500">{initials(m.display_name)}</span>
+                    </div>
+                    <div className="flex items-center gap-1 flex-1 min-w-0">
+                      <span className="text-sm text-stone-700 truncate">{m.display_name}</span>
+                      {m.role === 'admin' && <Crown size={11} weight="fill" className="text-jade shrink-0" />}
+                      {m.user_id === userId && <span className="text-stone-400 text-xs shrink-0">(You)</span>}
+                    </div>
+                    {m.user_id !== userId && (
+                      <div className="flex items-center gap-0.5 shrink-0">
+                        <button
+                          onClick={() => handleSetRole(m.user_id, m.role === 'admin' ? 'member' : 'admin')}
+                          disabled={!!settingRoleId}
+                          title={m.role === 'admin' ? 'Remove admin' : 'Make admin'}
+                          className="w-7 h-7 flex items-center justify-center text-stone-300 hover:text-jade transition-colors disabled:opacity-40 rounded-lg hover:bg-stone-50"
+                        >
+                          {settingRoleId === m.user_id
+                            ? <span className="text-[10px] text-stone-300">…</span>
+                            : <Crown size={13} weight={m.role === 'admin' ? 'fill' : 'regular'} />
+                          }
+                        </button>
+                        <button
+                          onClick={() => handleRemoveMember(m.user_id)}
+                          disabled={removingId === m.user_id}
+                          className="w-7 h-7 flex items-center justify-center text-stone-300 hover:text-red-400 transition-colors disabled:opacity-40 rounded-lg hover:bg-red-50"
+                        >
+                          {removingId === m.user_id
+                            ? <span className="text-[10px] text-stone-300">…</span>
+                            : <X size={13} weight="bold" />
+                          }
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 

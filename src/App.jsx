@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
-import { ForkKnife, HandHeart, Confetti, ChatCircleDots, HandsPraying } from '@phosphor-icons/react'
+import { ForkKnife, HandHeart, Confetti, ChatCircleDots, HandsPraying, GearSix } from '@phosphor-icons/react'
 import { formatDate } from './utils/dates.js'
 import { getUpcomingBirthdays } from './utils/birthdays.js'
 import { supabase } from './lib/supabase.js'
@@ -12,6 +12,7 @@ import ChatTab from './components/ChatTab.jsx'
 import AuthPage from './components/AuthPage.jsx'
 import ResetPasswordPage from './components/ResetPasswordPage.jsx'
 import WelcomeSplash from './components/WelcomeSplash.jsx'
+import SettingsModal from './components/SettingsModal.jsx'
 
 const TABS = [
   {
@@ -67,6 +68,7 @@ export default function App() {
   const [hasUnreadChat, setHasUnreadChat] = useState(false)
   const [isRecovery, setIsRecovery] = useState(false)
   const [showWelcome, setShowWelcome] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
 
   useEffect(() => { locationRef.current = location.pathname }, [location.pathname])
 
@@ -176,8 +178,8 @@ export default function App() {
       >
         <Routes>
           <Route path="/" element={<Navigate to="/meals" replace />} />
-          <Route path="/meals"     element={<RotationTab config={TABS[0].config} revealKey="/meals"     groupName={groupName} displayName={displayName} groupId={groupId} isAdmin={isAdmin} />} />
-          <Route path="/services"  element={<RotationTab config={TABS[1].config} revealKey="/services"  groupName={groupName} displayName={displayName} groupId={groupId} isAdmin={isAdmin} />} />
+          <Route path="/meals"     element={<RotationTab config={TABS[0].config} revealKey="/meals"     groupName={groupName} displayName={displayName} />} />
+          <Route path="/services"  element={<RotationTab config={TABS[1].config} revealKey="/services"  groupName={groupName} displayName={displayName} />} />
           <Route path="/chat"      element={<ChatTab session={session} displayName={displayName} groupId={groupId} isAdmin={isAdmin} onRead={() => setHasUnreadChat(false)} />} />
           <Route path="/birthdays" element={<BirthdayTab birthdays={birthdays} onBirthdaysChange={setBirthdays} revealKey="/birthdays" />} />
           <Route path="/prayer"    element={<PrayerTab displayName={displayName} />} />
@@ -189,7 +191,7 @@ export default function App() {
       )}
 
       <nav
-        className="fixed bottom-0 inset-x-0 bg-white border-t border-stone-200 z-40 flex"
+        className="fixed bottom-0 inset-x-0 bg-white border-t border-stone-200 z-40 flex relative"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
         {TABS.map(t => {
@@ -213,7 +215,24 @@ export default function App() {
             </button>
           )
         })}
+        <button
+          onClick={() => setSettingsOpen(true)}
+          className="absolute top-2 right-2 w-7 h-7 flex items-center justify-center text-stone-300 hover:text-stone-500 transition-colors touch-manipulation rounded-lg"
+        >
+          <GearSix size={17} />
+        </button>
       </nav>
+
+      {settingsOpen && (
+        <SettingsModal
+          groupName={groupName}
+          displayName={displayName}
+          groupId={groupId}
+          isAdmin={isAdmin}
+          userId={session.user.id}
+          onClose={() => setSettingsOpen(false)}
+        />
+      )}
     </div>
   )
 }

@@ -73,7 +73,7 @@ function typingLabel(users) {
   return `${users.length} people are typing…`
 }
 
-export default function ChatView({ conversation, session, displayName, groupId, members, isAdmin, exiting, onBack, onRead, onMemberRemoved, onMemberRoleChanged }) {
+export default function ChatView({ conversation, session, displayName, groupId, members, isAdmin, exiting, onBack, onRead }) {
   const [messages, setMessages]         = useState([])
   const [loading, setLoading]           = useState(true)
   const [hasMore, setHasMore]           = useState(false)
@@ -96,8 +96,6 @@ export default function ChatView({ conversation, session, displayName, groupId, 
   const [renamingGroup, setRenamingGroup]   = useState(false)
   const [renameValue, setRenameValue]       = useState('')
   const [renameSaving, setRenameSaving]     = useState(false)
-  const [removingId, setRemovingId]         = useState(null)
-  const [settingRoleId, setSettingRoleId]   = useState(null)
 
   const scrollRef          = useRef(null)
   const fileInputRef       = useRef(null)
@@ -438,23 +436,6 @@ export default function ChatView({ conversation, session, displayName, groupId, 
     await supabase.rpc('rename_group', { new_name: renameValue.trim() })
     setRenameSaving(false)
     setRenamingGroup(false)
-  }
-
-  async function handleSetRole(userId, newRole) {
-    setSettingRoleId(userId)
-    const { error } = await supabase.rpc('set_member_role', { target_user_id: userId, new_role: newRole })
-    if (error) alert(error.message)
-    else onMemberRoleChanged?.(userId, newRole)
-    setSettingRoleId(null)
-  }
-
-  async function handleRemoveMember(userId) {
-    const member = members.find(m => m.user_id === userId)
-    if (!window.confirm(`Remove ${member?.display_name ?? 'this member'} from the group?`)) return
-    setRemovingId(userId)
-    const { error } = await supabase.rpc('remove_member', { target_user_id: userId })
-    if (!error) onMemberRemoved?.(userId)
-    setRemovingId(null)
   }
 
   // ── Derived ───────────────────────────────────────────────────────────────
@@ -904,31 +885,6 @@ export default function ChatView({ conversation, session, displayName, groupId, 
                           )}
                         </div>
                       </div>
-                      {isAdmin && m.user_id !== myId && (
-                        <div className="flex items-center gap-1 shrink-0">
-                          <button
-                            onClick={() => handleSetRole(m.user_id, m.role === 'admin' ? 'member' : 'admin')}
-                            disabled={!!settingRoleId}
-                            title={m.role === 'admin' ? 'Remove admin' : 'Make admin'}
-                            className="text-stone-300 hover:text-jade transition-colors disabled:opacity-40"
-                          >
-                            {settingRoleId === m.user_id
-                              ? <span className="text-xs text-stone-300">…</span>
-                              : <Crown size={14} weight={m.role === 'admin' ? 'fill' : 'regular'} />
-                            }
-                          </button>
-                          <button
-                            onClick={() => handleRemoveMember(m.user_id)}
-                            disabled={removingId === m.user_id}
-                            className="text-stone-300 hover:text-red-400 transition-colors disabled:opacity-40"
-                          >
-                            {removingId === m.user_id
-                              ? <span className="text-xs text-stone-300">…</span>
-                              : <X size={15} weight="bold" />
-                            }
-                          </button>
-                        </div>
-                      )}
                     </div>
                   ))}
                 </div>
