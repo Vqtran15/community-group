@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { ListBullets } from '@phosphor-icons/react'
+import { ListBullets, GearSix } from '@phosphor-icons/react'
 import { supabase } from './lib/supabase.js'
 import { patchTitleDate, toDateString } from './utils/dates.js'
 import MealPage from './components/MealPage.jsx'
@@ -49,7 +49,7 @@ async function autoFillPages(existingPages, tables, defaultTitle) {
   return result
 }
 
-export default function RotationTab({ config, revealKey, groupName = '', displayName = '' }) {
+export default function RotationTab({ config, revealKey, groupName = '', displayName = '', onOpenSettings }) {
   const { label, Icon, editLabel, noun, itemNoun, pageNoun, pageNounPlural, tables, defaultTitle, autoFill = false } = config
 
   const [pages, setPages]       = useState([])
@@ -172,12 +172,20 @@ export default function RotationTab({ config, revealKey, groupName = '', display
           <Icon size={32} weight="fill" className="text-jade shrink-0" />
           <h1 className="text-3xl font-bold text-stone-800">{label}</h1>
         </button>
-        <button
-          onClick={() => setShowPages(true)}
-          className="flex items-center gap-2 px-2 py-1.5 rounded-xl text-stone-400 hover:text-stone-700 hover:bg-black/5 transition-colors"
-        >
-          <ListBullets size={20} weight="regular" />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => setShowPages(true)}
+            className="flex items-center gap-2 px-2 py-1.5 rounded-xl text-stone-400 hover:text-stone-700 hover:bg-black/5 transition-colors"
+          >
+            <ListBullets size={20} weight="regular" />
+          </button>
+          <button
+            onClick={onOpenSettings}
+            className="flex items-center gap-2 px-2 py-1.5 rounded-xl text-stone-400 hover:text-stone-700 hover:bg-black/5 transition-colors"
+          >
+            <GearSix size={20} weight="regular" />
+          </button>
+        </div>
       </div>
 
       <div className="pt-2">

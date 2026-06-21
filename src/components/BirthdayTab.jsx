@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Cake } from '@phosphor-icons/react'
+import { Cake, GearSix } from '@phosphor-icons/react'
 import { supabase } from '../lib/supabase.js'
 import { daysUntilNext, formatBirthdayDate } from '../utils/birthdays.js'
 import BirthdayCard from './BirthdayCard.jsx'
@@ -166,7 +166,7 @@ function BirthdayModal({ birthday, onClose, onSave, onDelete }) {
   )
 }
 
-export default function BirthdayTab({ birthdays, onBirthdaysChange, revealKey }) {
+export default function BirthdayTab({ birthdays, onBirthdaysChange, revealKey, onOpenSettings }) {
   const [modal, setModal] = useState(null) // null | 'add' | birthday object
 
   const sorted = [...birthdays].sort((a, b) => daysUntilNext(a.birthday) - daysUntilNext(b.birthday))
@@ -211,12 +211,20 @@ export default function BirthdayTab({ birthdays, onBirthdaysChange, revealKey })
               : `${birthdays.length} birthday${birthdays.length !== 1 ? 's' : ''}`}
           </p>
         </div>
-        <button
-          onClick={() => setModal('add')}
-          className="flex items-center gap-1.5 px-4 py-2 bg-jade hover:bg-jade-700 active:bg-jade-800 text-white rounded-lg text-sm font-medium transition-colors"
-        >
-          + Add Birthday
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={onOpenSettings}
+            className="w-9 h-9 flex items-center justify-center rounded-xl text-stone-400 hover:text-stone-700 hover:bg-black/5 transition-colors"
+          >
+            <GearSix size={20} weight="regular" />
+          </button>
+          <button
+            onClick={() => setModal('add')}
+            className="flex items-center gap-1.5 px-4 py-2 bg-jade hover:bg-jade-700 active:bg-jade-800 text-white rounded-lg text-sm font-medium transition-colors"
+          >
+            + Add Birthday
+          </button>
+        </div>
       </div>
 
       {sorted.length === 0 ? (

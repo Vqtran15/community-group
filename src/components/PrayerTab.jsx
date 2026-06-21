@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { HandsPraying, X, Plus, Trash, PencilSimple, Check } from '@phosphor-icons/react'
+import { HandsPraying, X, Plus, Trash, PencilSimple, Check, GearSix } from '@phosphor-icons/react'
 import { supabase } from '../lib/supabase.js'
 import { useModalClose } from '../hooks/useModalClose.js'
 import { useEntranceAnimation } from '../hooks/useEntranceAnimation.js'
@@ -437,7 +437,7 @@ function FriendCard({ friend, index, onClick }) {
   )
 }
 
-export default function PrayerTab({ displayName }) {
+export default function PrayerTab({ displayName, onOpenSettings }) {
   const [friends, setFriends]           = useState([])
   const [loading, setLoading]           = useState(true)
   const [addOpen, setAddOpen]           = useState(false)
@@ -499,12 +499,20 @@ export default function PrayerTab({ displayName }) {
             )}
           </p>
         </div>
-        <button
-          onClick={() => setAddOpen(true)}
-          className="flex items-center gap-1.5 px-4 py-2 bg-jade hover:bg-jade-700 active:bg-jade-800 text-white rounded-lg text-sm font-medium transition-colors"
-        >
-          + Friend
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={onOpenSettings}
+            className="w-9 h-9 flex items-center justify-center rounded-xl text-stone-400 hover:text-stone-700 hover:bg-black/5 transition-colors"
+          >
+            <GearSix size={20} weight="regular" />
+          </button>
+          <button
+            onClick={() => setAddOpen(true)}
+            className="flex items-center gap-1.5 px-4 py-2 bg-jade hover:bg-jade-700 active:bg-jade-800 text-white rounded-lg text-sm font-medium transition-colors"
+          >
+            + Friend
+          </button>
+        </div>
       </div>
 
       {loading ? (
