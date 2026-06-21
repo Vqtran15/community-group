@@ -324,7 +324,7 @@ export default function ChatView({ conversation, session, displayName, groupId, 
       let imageUrl = null
       if (imagePreview) {
         const ext = imagePreview.file.name.split('.').pop()
-        const path = `${convId}/${myId}_${Date.now()}.${ext}`
+        const path = `${myId}/${convId}_${Date.now()}.${ext}`
         const { data: uploaded, error: upErr } = await supabase.storage
           .from('chat-images')
           .upload(path, imagePreview.file, { contentType: imagePreview.file.type })
