@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
-import { GearSix, ListBullets, PencilSimple, SignOut, Trash } from '@phosphor-icons/react'
+import { GearSix, SignOut, Trash } from '@phosphor-icons/react'
 import { useModalClose } from '../hooks/useModalClose.js'
 import { supabase } from '../lib/supabase.js'
 
-export default function SettingsModal({ editLabel, pageNoun, pageNounPlural, groupName, displayName, groupId, isAdmin, onEditPage, onManagePages, onClose }) {
+export default function SettingsModal({ groupName, displayName, groupId, isAdmin, onClose }) {
   const [closing, close] = useModalClose(onClose)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -72,40 +72,6 @@ export default function SettingsModal({ editLabel, pageNoun, pageNounPlural, gro
         </div>
 
         <div className="px-5 pb-6 space-y-2">
-          <p className="text-xs font-semibold text-stone-400 uppercase tracking-wide pb-1">
-            {pageNounPlural}
-          </p>
-          {onEditPage && (
-            <button
-              onClick={onEditPage}
-              className="w-full flex items-center justify-between px-4 py-3.5 rounded-xl border-2 border-stone-200 bg-white hover:border-coral hover:bg-coral-light transition-all"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-coral-100 flex items-center justify-center">
-                  <PencilSimple size={16} weight="bold" className="text-coral-700" />
-                </div>
-                <div className="text-left">
-                  <div className="text-sm font-semibold text-stone-800">{editLabel}</div>
-                  <div className="text-xs text-stone-400 mt-0.5">Edit title, date, and ingredients</div>
-                </div>
-              </div>
-            </button>
-          )}
-          <button
-            onClick={onManagePages}
-            className="w-full flex items-center justify-between px-4 py-3.5 rounded-xl border-2 border-stone-200 bg-white hover:border-jade hover:bg-lagoon-50 transition-all"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-lagoon-50 flex items-center justify-center">
-                <ListBullets size={16} weight="bold" className="text-lagoon-700" />
-              </div>
-              <div className="text-left">
-                <div className="text-sm font-semibold text-stone-800">Manage {pageNounPlural.toLowerCase()}</div>
-                <div className="text-xs text-stone-400 mt-0.5">Add, view, and reorder {pageNounPlural.toLowerCase()}</div>
-              </div>
-            </div>
-          </button>
-
           {inviteCode && (
             <div className="pt-2 border-t border-stone-100">
               <p className="text-xs font-semibold text-stone-400 uppercase tracking-wide pb-2">Invite Code</p>
