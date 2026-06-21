@@ -87,7 +87,7 @@ export default function App() {
     if (!session) return
     supabase
       .from('profiles')
-      .select('display_name, community_group_id, community_groups(name)')
+      .select('display_name, community_group_id, role, community_groups(name)')
       .eq('user_id', session.user.id)
       .single()
       .then(({ data }) => {
@@ -104,6 +104,7 @@ export default function App() {
   const displayName = profile?.display_name ?? ''
   const groupName   = profile?.community_groups?.name ?? session?.user?.user_metadata?.community_group_name ?? ''
   const groupId     = profile?.community_group_id ?? null
+  const isAdmin     = profile?.role === 'admin'
 
   useEffect(() => {
     if (!session) return
@@ -177,7 +178,7 @@ export default function App() {
           <Route path="/" element={<Navigate to="/meals" replace />} />
           <Route path="/meals"     element={<RotationTab config={TABS[0].config} revealKey="/meals"     groupName={groupName} displayName={displayName} />} />
           <Route path="/services"  element={<RotationTab config={TABS[1].config} revealKey="/services"  groupName={groupName} displayName={displayName} />} />
-          <Route path="/chat"      element={<ChatTab session={session} displayName={displayName} groupId={groupId} onRead={() => setHasUnreadChat(false)} />} />
+          <Route path="/chat"      element={<ChatTab session={session} displayName={displayName} groupId={groupId} isAdmin={isAdmin} onRead={() => setHasUnreadChat(false)} />} />
           <Route path="/birthdays" element={<BirthdayTab birthdays={birthdays} onBirthdaysChange={setBirthdays} revealKey="/birthdays" />} />
           <Route path="/prayer"    element={<PrayerTab displayName={displayName} />} />
         </Routes>

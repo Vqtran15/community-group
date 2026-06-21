@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase.js'
 import ConversationList from './ConversationList.jsx'
 import ChatView from './ChatView.jsx'
 
-export default function ChatTab({ session, displayName, groupId, onRead }) {
+export default function ChatTab({ session, displayName, groupId, isAdmin, onRead }) {
   const [activeConv, setActiveConv]   = useState(null)
   const [members, setMembers]         = useState([])
   const [chatExiting, setChatExiting] = useState(false)
@@ -13,7 +13,7 @@ export default function ChatTab({ session, displayName, groupId, onRead }) {
     if (!groupId) return
     supabase
       .from('profiles')
-      .select('user_id, display_name')
+      .select('user_id, display_name, role')
       .eq('community_group_id', groupId)
       .then(({ data }) => setMembers(data ?? []))
   }, [groupId])
@@ -47,9 +47,11 @@ export default function ChatTab({ session, displayName, groupId, onRead }) {
         displayName={displayName}
         groupId={groupId}
         members={members}
+        isAdmin={isAdmin}
         exiting={chatExiting}
         onBack={goBack}
         onRead={onRead}
+        onMemberRemoved={userId => setMembers(prev => prev.filter(m => m.user_id !== userId))}
       />
     )
   }

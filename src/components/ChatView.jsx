@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useLayoutEffect } from 'react'
 import {
   PaperPlaneTilt, Image as ImageIcon, X,
   MagnifyingGlass, ArrowDown, Trash, ArrowLeft, Notepad,
-  Users, ArrowBendUpLeft,
+  Users, ArrowBendUpLeft, Crown, PencilSimple, Check,
 } from '@phosphor-icons/react'
 import { supabase } from '../lib/supabase.js'
 import { useModalClose } from '../hooks/useModalClose.js'
@@ -73,7 +73,7 @@ function typingLabel(users) {
   return `${users.length} people are typing…`
 }
 
-export default function ChatView({ conversation, session, displayName, groupId, members, exiting, onBack, onRead }) {
+export default function ChatView({ conversation, session, displayName, groupId, members, isAdmin, exiting, onBack, onRead, onMemberRemoved }) {
   const [messages, setMessages]         = useState([])
   const [loading, setLoading]           = useState(true)
   const [hasMore, setHasMore]           = useState(false)
@@ -95,6 +95,11 @@ export default function ChatView({ conversation, session, displayName, groupId, 
   const [infoClosing, closeInfo]            = useModalClose(() => setInfoOpen(false))
   const [inviteCode, setInviteCode]         = useState(null)
   const [codeCopied, setCodeCopied]         = useState(false)
+  const [codeRotating, setCodeRotating]     = useState(false)
+  const [renamingGroup, setRenamingGroup]   = useState(false)
+  const [renameValue, setRenameValue]       = useState('')
+  const [renameSaving, setRenameSaving]     = useState(false)
+  const [removingId, setRemovingId]         = useState(null)
 
   const scrollRef          = useRef(null)
   const fileInputRef       = useRef(null)
@@ -443,6 +448,32 @@ export default function ChatView({ conversation, session, displayName, groupId, 
     navigator.clipboard.writeText(inviteCode)
     setCodeCopied(true)
     setTimeout(() => setCodeCopied(false), 2000)
+  }
+
+  async function handleRotateCode() {
+    if (!window.confirm('Generate a new invite code? The old code will stop working immediately.')) return
+    setCodeRotating(true)
+    const { data, error } = await supabase.rpc('rotate_invite_code')
+    if (!error) setInviteCode(data)
+    setCodeRotating(false)
+  }
+
+  async function handleRenameGroup(e) {
+    e.preventDefault()
+    if (!renameValue.trim()) return
+    setRenameSaving(true)
+    await supabase.rpc('rename_group', { new_name: renameValue.trim() })
+    setRenameSaving(false)
+    setRenamingGroup(false)
+  }
+
+  async function handleRemoveMember(userId) {
+    const member = members.find(m => m.user_id === userId)
+    if (!window.confirm(`Remove ${member?.display_name ?? 'this member'} from the group?`)) return
+    setRemovingId(userId)
+    const { error } = await supabase.rpc('remove_member', { target_user_id: userId })
+    if (!error) onMemberRemoved?.(userId)
+    setRemovingId(null)
   }
 
   // ── Derived ───────────────────────────────────────────────────────────────
@@ -838,7 +869,34 @@ export default function ChatView({ conversation, session, displayName, groupId, 
                   : <span className="text-white text-2xl font-bold">{initials(title)}</span>
                 }
               </div>
-              <h3 className="text-xl font-bold text-stone-800 text-center">{title}</h3>
+              {renamingGroup ? (
+                <form onSubmit={handleRenameGroup} className="flex items-center gap-2 w-full max-w-xs">
+                  <input
+                    autoFocus
+                    value={renameValue}
+                    onChange={e => setRenameValue(e.target.value)}
+                    className="flex-1 border border-stone-200 rounded-xl px-3 py-1.5 text-base font-bold text-stone-800 text-center focus:outline-none focus:ring-2 focus:ring-jade"
+                  />
+                  <button type="submit" disabled={renameSaving} className="text-jade disabled:opacity-40">
+                    <Check size={18} weight="bold" />
+                  </button>
+                  <button type="button" onClick={() => setRenamingGroup(false)} className="text-stone-400">
+                    <X size={18} weight="bold" />
+                  </button>
+                </form>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <h3 className="text-xl font-bold text-stone-800 text-center">{title}</h3>
+                  {isAdmin && conversation.type === 'group' && (
+                    <button
+                      onClick={() => { setRenameValue(title); setRenamingGroup(true) }}
+                      className="text-stone-400 hover:text-stone-600 transition-colors"
+                    >
+                      <PencilSimple size={15} />
+                    </button>
+                  )}
+                </div>
+              )}
               <p className="text-sm text-stone-400 mt-1">
                 {conversation.type === 'group' ? `${members.length} member${members.length !== 1 ? 's' : ''}` : 'Direct Message'}
               </p>
@@ -849,13 +907,21 @@ export default function ChatView({ conversation, session, displayName, groupId, 
               <div className="px-5 pb-4">
                 <p className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-2">Invite Code</p>
                 <div className="flex items-center gap-3 bg-stone-50 border border-stone-200 rounded-xl px-4 py-3">
-                  <span className="font-mono font-bold text-xl tracking-widest text-stone-800 flex-1">{inviteCode}</span>
-                  <button
-                    onClick={copyInviteCode}
-                    className="text-xs font-semibold text-jade shrink-0 transition-opacity"
-                  >
+                  <span className="font-mono font-bold text-xl tracking-widest text-stone-800 flex-1">
+                    {codeRotating ? '……' : inviteCode}
+                  </span>
+                  <button onClick={copyInviteCode} className="text-xs font-semibold text-jade shrink-0">
                     {codeCopied ? 'Copied!' : 'Copy'}
                   </button>
+                  {isAdmin && (
+                    <button
+                      onClick={handleRotateCode}
+                      disabled={codeRotating}
+                      className="text-xs font-semibold text-stone-400 hover:text-red-500 transition-colors shrink-0 disabled:opacity-40"
+                    >
+                      Rotate
+                    </button>
+                  )}
                 </div>
                 <p className="text-xs text-stone-400 mt-1.5">Share this code with people you want to invite.</p>
               </div>
@@ -871,10 +937,29 @@ export default function ChatView({ conversation, session, displayName, groupId, 
                       <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0 ${avatarColor(m.user_id)}`}>
                         {initials(m.display_name)}
                       </div>
-                      <span className="text-sm text-stone-800">
-                        {m.display_name}
-                        {m.user_id === myId && <span className="text-stone-400 ml-1.5 text-xs">(You)</span>}
-                      </span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-sm text-stone-800 truncate">{m.display_name}</span>
+                          {m.role === 'admin' && (
+                            <Crown size={12} weight="fill" className="text-jade shrink-0" />
+                          )}
+                          {m.user_id === myId && (
+                            <span className="text-stone-400 text-xs shrink-0">(You)</span>
+                          )}
+                        </div>
+                      </div>
+                      {isAdmin && m.user_id !== myId && (
+                        <button
+                          onClick={() => handleRemoveMember(m.user_id)}
+                          disabled={removingId === m.user_id}
+                          className="text-stone-300 hover:text-red-400 transition-colors shrink-0 disabled:opacity-40"
+                        >
+                          {removingId === m.user_id
+                            ? <span className="text-xs text-stone-300">…</span>
+                            : <X size={15} weight="bold" />
+                          }
+                        </button>
+                      )}
                     </div>
                   ))}
                 </div>
