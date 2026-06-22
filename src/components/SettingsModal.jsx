@@ -21,22 +21,28 @@ export default function SettingsModal({ groupName, displayName, groupId, isAdmin
 
   useEffect(() => {
     if (!groupId) return
-    supabase
-      .from('community_groups')
-      .select('invite_code')
-      .eq('id', groupId)
-      .single()
-      .then(({ data }) => setInviteCode(data?.invite_code ?? null))
+    const id = setTimeout(() => {
+      supabase
+        .from('community_groups')
+        .select('invite_code')
+        .eq('id', groupId)
+        .single()
+        .then(({ data }) => setInviteCode(data?.invite_code ?? null))
+    }, 260)
+    return () => clearTimeout(id)
   }, [groupId])
 
   useEffect(() => {
     if (!groupId || !isAdmin) return
-    supabase
-      .from('profiles')
-      .select('user_id, display_name, role')
-      .eq('community_group_id', groupId)
-      .order('display_name')
-      .then(({ data }) => setMembers(data ?? []))
+    const id = setTimeout(() => {
+      supabase
+        .from('profiles')
+        .select('user_id, display_name, role')
+        .eq('community_group_id', groupId)
+        .order('display_name')
+        .then(({ data }) => setMembers(data ?? []))
+    }, 260)
+    return () => clearTimeout(id)
   }, [groupId, isAdmin])
 
   function copyCode() {
@@ -108,7 +114,7 @@ export default function SettingsModal({ groupName, displayName, groupId, isAdmin
         <div className="px-5 pb-6 space-y-2">
           <div className="pt-2 border-t border-stone-100">
             <button
-              onClick={() => { onClose(); onOpenGuide?.() }}
+              onClick={() => { close(); onOpenGuide?.() }}
               className="w-full flex items-center gap-3 px-1 py-2.5 text-sm text-stone-700 hover:text-stone-900 transition-colors"
             >
               <BookOpen size={18} weight="fill" className="text-jade shrink-0" />
