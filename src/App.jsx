@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
-import { ForkKnife, HandHeart, ChatCircleDots, HandsPraying, Confetti } from '@phosphor-icons/react'
+import { ForkKnife, HandHeart, ChatCircleDots, HandsPraying, House } from '@phosphor-icons/react'
 import { formatDate } from './utils/dates.js'
 import { getUpcomingBirthdays } from './utils/birthdays.js'
 import { supabase } from './lib/supabase.js'
@@ -10,12 +10,14 @@ import PrayerTab from './components/PrayerTab.jsx'
 import BirthdayBanner from './components/BirthdayBanner.jsx'
 import ChatTab from './components/ChatTab.jsx'
 import GuideTab from './components/GuideTab.jsx'
+import OverviewTab from './components/OverviewTab.jsx'
 import AuthPage from './components/AuthPage.jsx'
 import ResetPasswordPage from './components/ResetPasswordPage.jsx'
 import WelcomeSplash from './components/WelcomeSplash.jsx'
 import SettingsModal from './components/SettingsModal.jsx'
 
 const TABS = [
+  { path: '/home',     shortLabel: 'Home',      Icon: House },
   {
     path: '/meals',
     shortLabel: 'Meals',
@@ -49,9 +51,8 @@ const TABS = [
       defaultTitle: dateStr => `Service Night — ${formatDate(dateStr)}`,
     },
   },
-  { path: '/prayer',    shortLabel: 'Prayer',    Icon: HandsPraying },
   { path: '/chat',      shortLabel: 'Chat',      Icon: ChatCircleDots },
-  { path: '/birthdays', shortLabel: 'Birthdays', Icon: Confetti },
+  { path: '/prayer',    shortLabel: 'Prayer',    Icon: HandsPraying },
 ]
 
 const PATHS = TABS.map(t => t.path)
@@ -76,6 +77,14 @@ export default function App() {
   function closeGuide() {
     setGuideClosing(true)
     setTimeout(() => { setGuideOpen(false); setGuideClosing(false) }, 200)
+  }
+
+  const [birthdayOpen, setBirthdayOpen] = useState(false)
+  const [birthdayClosing, setBirthdayClosing] = useState(false)
+
+  function closeBirthdays() {
+    setBirthdayClosing(true)
+    setTimeout(() => { setBirthdayOpen(false); setBirthdayClosing(false) }, 200)
   }
 
   useEffect(() => { locationRef.current = location.pathname }, [location.pathname])
@@ -179,19 +188,19 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-sunrise-50 overflow-x-hidden" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
-      {!isFullHeight && <BirthdayBanner upcoming={upcoming} />}
+      {!isFullHeight && location.pathname !== '/home' && <BirthdayBanner upcoming={upcoming} />}
 
       <div
         key={location.pathname}
         className={`${isFullHeight ? '' : 'pb-24'} ${enterFrom === 'right' ? 'animate-slide-in-right' : 'animate-slide-in-left'}`}
       >
         <Routes>
-          <Route path="/" element={<Navigate to="/meals" replace />} />
-          <Route path="/meals"     element={<RotationTab config={TABS[0].config} revealKey="/meals"     groupName={groupName} displayName={displayName} onOpenSettings={() => setSettingsOpen(true)} />} />
-          <Route path="/services"  element={<RotationTab config={TABS[1].config} revealKey="/services"  groupName={groupName} displayName={displayName} onOpenSettings={() => setSettingsOpen(true)} />} />
+          <Route path="/" element={<Navigate to="/home" replace />} />
+          <Route path="/home"      element={<OverviewTab displayName={displayName} groupName={groupName} groupId={groupId} isAdmin={isAdmin} birthdays={birthdays} onOpenBirthdays={() => setBirthdayOpen(true)} onOpenGuide={() => setGuideOpen(true)} />} />
+          <Route path="/meals"     element={<RotationTab config={TABS[1].config} revealKey="/meals"     groupName={groupName} displayName={displayName} onOpenSettings={() => setSettingsOpen(true)} />} />
+          <Route path="/services"  element={<RotationTab config={TABS[2].config} revealKey="/services"  groupName={groupName} displayName={displayName} onOpenSettings={() => setSettingsOpen(true)} />} />
           <Route path="/chat"      element={<ChatTab session={session} displayName={displayName} groupId={groupId} isAdmin={isAdmin} onRead={() => setHasUnreadChat(false)} onOpenSettings={() => setSettingsOpen(true)} />} />
           <Route path="/prayer"    element={<PrayerTab displayName={displayName} onOpenSettings={() => setSettingsOpen(true)} />} />
-          <Route path="/birthdays" element={<BirthdayTab birthdays={birthdays} onBirthdaysChange={setBirthdays} revealKey="/birthdays" onOpenSettings={() => setSettingsOpen(true)} />} />
         </Routes>
       </div>
 
@@ -213,9 +222,6 @@ export default function App() {
             >
               <span className={`relative px-3 py-1 rounded-2xl transition-colors ${active ? 'bg-jade text-white' : ''}`}>
                 <t.Icon size={26} weight={active ? 'fill' : 'regular'} />
-                {t.path === '/birthdays' && upcoming.length > 0 && (
-                  <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-lagoon rounded-full border-2 border-white" />
-                )}
                 {t.path === '/chat' && hasUnreadChat && (
                   <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-coral rounded-full border-2 border-white" />
                 )}
@@ -244,6 +250,20 @@ export default function App() {
           style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}
         >
           <GuideTab onClose={closeGuide} />
+        </div>
+      )}
+
+      {birthdayOpen && (
+        <div
+          className={`fixed inset-0 z-50 bg-sunrise-50 overflow-y-auto ${birthdayClosing ? 'animate-slide-out-right' : 'animate-slide-in-right'}`}
+          style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}
+        >
+          <BirthdayTab
+            birthdays={birthdays}
+            onBirthdaysChange={setBirthdays}
+            revealKey="birthdays"
+            onClose={closeBirthdays}
+          />
         </div>
       )}
     </div>
