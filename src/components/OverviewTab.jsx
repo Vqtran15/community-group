@@ -1,14 +1,18 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ForkKnife, HandHeart, Cake, BookOpen, CaretRight, Megaphone, PencilSimple, HandWaving } from '@phosphor-icons/react'
+import { ForkKnife, HandHeart, Cake, BookOpen, CaretRight, Megaphone, PencilSimple, HandWaving, Lightbulb } from '@phosphor-icons/react'
 import { supabase } from '../lib/supabase.js'
 import { toDateString } from '../utils/dates.js'
 import { daysUntilNext } from '../utils/birthdays.js'
 import { useModalClose } from '../hooks/useModalClose.js'
 
+const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+
 function timeGreeting() {
-  const h = new Date().getHours()
-  if (h < 12) return 'Good morning'
+  const now = new Date()
+  const h = now.getHours()
+  const day = DAYS[now.getDay()]
+  if (h < 12) return `Happy ${day} morning`
   if (h < 17) return 'Good afternoon'
   return 'Good evening'
 }
@@ -111,6 +115,7 @@ export default function OverviewTab({ displayName, groupName, groupId, isAdmin, 
   const [nextService, setNextService]       = useState(undefined)
   const [announcement, setAnnouncement]     = useState(undefined)
   const [editingAnnouncement, setEditingAnnouncement] = useState(false)
+  const [funFact, setFunFact]               = useState(null)
 
   useEffect(() => {
     const today = toDateString(new Date())
@@ -140,6 +145,20 @@ export default function OverviewTab({ displayName, groupName, groupId, isAdmin, 
         .eq('id', groupId)
         .single()
         .then(({ data }) => setAnnouncement(data?.announcement ?? null))
+    }
+
+    const today = new Date().toISOString().slice(0, 10)
+    const cached = JSON.parse(localStorage.getItem('fun_fact') ?? 'null')
+    if (cached?.date === today) {
+      setFunFact(cached.text)
+    } else {
+      fetch('https://uselessfacts.jsph.pl/api/v2/facts/random?language=en')
+        .then(r => r.json())
+        .then(d => {
+          localStorage.setItem('fun_fact', JSON.stringify({ date: today, text: d.text }))
+          setFunFact(d.text)
+        })
+        .catch(() => setFunFact(null))
     }
   }, [groupId])
 
@@ -233,6 +252,21 @@ export default function OverviewTab({ displayName, groupName, groupId, isAdmin, 
           primary="Bridgetown Community Guide"
           secondary="Tap to open"
         />
+
+        {/* Fun Fact */}
+        {funFact !== null && (
+          <div className="w-full bg-amber-50 border border-amber-100 rounded-2xl p-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center shrink-0 mt-0.5">
+                <Lightbulb size={22} weight="fill" className="text-amber-500" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[11px] font-semibold text-amber-500 uppercase tracking-wide mb-1">Fun Fact</p>
+                <p className="text-sm text-stone-700 leading-relaxed">{funFact}</p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {editingAnnouncement && (
