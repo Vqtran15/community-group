@@ -147,7 +147,6 @@ export default function OverviewTab({ displayName, groupName, groupId, isAdmin, 
         .then(({ data }) => setAnnouncement(data?.announcement ?? null))
     }
 
-    const today = new Date().toISOString().slice(0, 10)
     const cached = JSON.parse(localStorage.getItem('fun_fact') ?? 'null')
     if (cached?.date === today) {
       setFunFact(cached.text)
