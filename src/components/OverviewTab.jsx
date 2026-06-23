@@ -152,11 +152,12 @@ export default function OverviewTab({ displayName, groupName, groupId, isAdmin, 
     if (cached?.date === today) {
       setFunFact(cached.text)
     } else {
-      fetch('https://uselessfacts.jsph.pl/api/v2/facts/random?language=en')
+      fetch('https://api.adviceslip.com/advice')
         .then(r => r.json())
         .then(d => {
-          localStorage.setItem('fun_fact', JSON.stringify({ date: today, text: d.text }))
-          setFunFact(d.text)
+          const text = d.slip.advice
+          localStorage.setItem('fun_fact', JSON.stringify({ date: today, text }))
+          setFunFact(text)
         })
         .catch(() => setFunFact(null))
     }
@@ -261,7 +262,7 @@ export default function OverviewTab({ displayName, groupName, groupId, isAdmin, 
                 <Lightbulb size={22} weight="fill" className="text-amber-500" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-[11px] font-semibold text-amber-500 uppercase tracking-wide mb-1">Fun Fact</p>
+                <p className="text-[11px] font-semibold text-amber-500 uppercase tracking-wide mb-1">Daily Thought</p>
                 <p className="text-sm text-stone-700 leading-relaxed">{funFact}</p>
               </div>
             </div>
