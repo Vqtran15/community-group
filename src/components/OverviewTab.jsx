@@ -187,12 +187,22 @@ export default function OverviewTab({ displayName, groupName, groupId, isAdmin, 
     .sort((a, b) => a.days - b.days)
 
   const nextBirthday = sortedBirthdays[0]
+  const sameDayGroup = nextBirthday
+    ? sortedBirthdays.filter(b => b.days === nextBirthday.days).map(b => b.name)
+    : []
+
+  function joinNames(names) {
+    if (names.length === 1) return names[0]
+    if (names.length === 2) return `${names[0]} & ${names[1]}`
+    return `${names.slice(0, -1).join(', ')} & ${names[names.length - 1]}`
+  }
 
   function birthdayPrimary() {
     if (!nextBirthday) return 'No upcoming birthdays'
-    if (nextBirthday.days === 0) return `🎂 Today is ${nextBirthday.name}'s birthday!`
-    if (nextBirthday.days === 1) return `${nextBirthday.name}'s birthday is tomorrow`
-    return `${nextBirthday.name}'s birthday in ${nextBirthday.days} days`
+    const who = joinNames(sameDayGroup)
+    if (nextBirthday.days === 0) return `🎂 Today is ${who}'s birthday!`
+    if (nextBirthday.days === 1) return `${who}'s birthday is tomorrow`
+    return `${who}'s birthday in ${nextBirthday.days} days`
   }
 
   const showAnnouncement = isAdmin || !!announcement
@@ -286,7 +296,6 @@ export default function OverviewTab({ displayName, groupName, groupId, isAdmin, 
           iconBg="bg-lagoon-50"
           label="Upcoming Birthdays"
           primary={birthdayPrimary()}
-          secondary={sortedBirthdays.length > 1 ? `${sortedBirthdays.length} people total` : null}
           delay={showAnnouncement ? 280 : 210}
         />
         <Card
