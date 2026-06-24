@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { HandsPraying, X, Plus, Trash, PencilSimple, Check, GearSix, UserPlus } from '@phosphor-icons/react'
 import { supabase } from '../lib/supabase.js'
 import { useModalClose } from '../hooks/useModalClose.js'
@@ -119,6 +119,7 @@ function PrayerModal({ friend, displayName, onClose, onFriendDelete, onFriendRen
   const [editDate, setEditDate]           = useState('')
   const [editText, setEditText]           = useState('')
   const [newId, setNewId]                 = useState(null)
+  const newIdTimerRef                     = useRef(null)
 
   useEffect(() => {
     const timer = setTimeout(() => setAnimDone(true), 280)
@@ -151,7 +152,8 @@ function PrayerModal({ friend, displayName, onClose, onFriendDelete, onFriendRen
     if (err) { setError(err.message); setSaving(false); return }
     setRequests(prev => [data, ...prev])
     setNewId(data.id)
-    setTimeout(() => setNewId(null), 500)
+    clearTimeout(newIdTimerRef.current)
+    newIdTimerRef.current = setTimeout(() => setNewId(null), 500)
     setRequestText('')
     setDate(new Date().toISOString().split('T')[0])
     setSaving(false)
@@ -160,10 +162,9 @@ function PrayerModal({ friend, displayName, onClose, onFriendDelete, onFriendRen
 
   async function handleDeleteRequest(id) {
     const { error: err } = await supabase.from('prayer_requests').delete().eq('id', id)
-    if (!err) {
-      setRequests(prev => prev.filter(r => r.id !== id))
-      onCountChange(friend.id, -1)
-    }
+    if (err) { alert('Failed to delete: ' + err.message); return }
+    setRequests(prev => prev.filter(r => r.id !== id))
+    onCountChange(friend.id, -1)
   }
 
   async function handleDeleteFriend() {

@@ -26,7 +26,7 @@ export default function ChatTab({ session, displayName, groupId, isAdmin, onRead
       .update({ last_read_at: new Date().toISOString() })
       .eq('conversation_id', conv.id)
       .eq('user_id', session.user.id)
-      .then(() => {})
+      .then(({ error }) => { if (error) console.error('Failed to mark read:', error.message) })
   }
 
   function goBack() {

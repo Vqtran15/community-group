@@ -61,19 +61,20 @@ export default function RotationTab({ config, revealKey, groupName = '', display
   const [showManagePages, setShowManagePages] = useState(false)
   const [showEditPage, setShowEditPage]       = useState(false)
 
-  useEffect(() => {
-    async function load() {
-      const { data, error: err } = await supabase.from(tables.pages).select('*').order('position')
-      if (err) { setError(err.message); setLoading(false); return }
-      const filled = autoFill ? await autoFillPages(data ?? [], tables, defaultTitle) : (data ?? [])
-      const today = toDateString(new Date())
-      const upcomingIdx = filled.findIndex(p => p.week_date >= today)
-      setPages(filled)
-      setViewIndex(upcomingIdx === -1 ? Math.max(0, filled.length - 1) : upcomingIdx)
-      setLoading(false)
-    }
-    load()
-  }, [])
+  async function load() {
+    setLoading(true)
+    setError(null)
+    const { data, error: err } = await supabase.from(tables.pages).select('*').order('position')
+    if (err) { setError(err.message); setLoading(false); return }
+    const filled = autoFill ? await autoFillPages(data ?? [], tables, defaultTitle) : (data ?? [])
+    const today = toDateString(new Date())
+    const upcomingIdx = filled.findIndex(p => p.week_date >= today)
+    setPages(filled)
+    setViewIndex(upcomingIdx === -1 ? Math.max(0, filled.length - 1) : upcomingIdx)
+    setLoading(false)
+  }
+
+  useEffect(() => { load() }, [])
 
   async function handleAddPage(data) {
     const { data: newPage, error: err } = await supabase
@@ -149,9 +150,14 @@ export default function RotationTab({ config, revealKey, groupName = '', display
     return (
       <div className="flex items-center justify-center py-24 px-4">
         <div className="bg-white rounded-xl p-6 max-w-md text-center shadow">
-          <p className="text-red-600 font-medium mb-2">Failed to connect</p>
+          <p className="text-red-600 font-medium mb-2">Failed to load</p>
           <p className="text-stone-500 text-sm">{error}</p>
-          <p className="text-stone-400 text-xs mt-3">Check your .env file has the correct Supabase URL and anon key.</p>
+          <button
+            onClick={load}
+            className="mt-4 px-4 py-2 bg-jade hover:bg-jade-700 text-white text-sm font-medium rounded-lg transition-colors"
+          >
+            Retry
+          </button>
         </div>
       </div>
     )
