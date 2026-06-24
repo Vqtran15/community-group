@@ -191,7 +191,7 @@ export default function OverviewTab({ displayName, groupName, groupId, isAdmin, 
       <div className="mb-7">
         <h1 className="text-3xl font-bold text-stone-800 flex items-center gap-2">
           {timeGreeting()}{displayName ? `, ${displayName.split(' ')[0]}` : ''}
-          <HandWaving size={30} weight="fill" className="text-amber-400" />
+          <HandWaving size={30} weight="fill" className="text-amber-400 animate-wave origin-bottom" />
         </h1>
         {groupName && <p className="text-stone-500 mt-1 text-sm">{groupName}</p>}
       </div>
