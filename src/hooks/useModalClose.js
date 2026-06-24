@@ -14,5 +14,9 @@ export function useModalClose(onClose, duration = 180) {
     setTimeout(onClose, duration)
   }
 
-  return [closing, close, mounted]
+  function reset() {
+    setClosing(false)
+  }
+
+  return [closing, close, mounted, reset]
 }

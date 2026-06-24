@@ -30,14 +30,14 @@ export default function ConversationList({ session, groupId, members, enterClass
   const [loading, setLoading]             = useState(true)
   const [newDmOpen, setNewDmOpen]         = useState(false)
   const [starting, setStarting]           = useState(false)
-  const [dmClosing, closeDm]              = useModalClose(() => setNewDmOpen(false))
+  const [dmClosing, closeDm, , resetDm]   = useModalClose(() => setNewDmOpen(false))
   const [searchOpen, setSearchOpen]       = useState(false)
   const [searchQuery, setSearchQuery]     = useState('')
   const [newChatMode, setNewChatMode]         = useState('dm')
   const [selectedMembers, setSelectedMembers] = useState(new Set())
   const [creating, setCreating]               = useState(false)
   const [confirmDeleteConv, setConfirmDeleteConv] = useState(null)
-  const [deleteClosing, closeDeleteConfirm]   = useModalClose(() => setConfirmDeleteConv(null))
+  const [deleteClosing, closeDeleteConfirm, , resetDeleteConfirm] = useModalClose(() => setConfirmDeleteConv(null))
   const [deletingConvId, setDeletingConvId]   = useState(null)
   const searchInputRef = useRef(null)
 
@@ -174,6 +174,7 @@ export default function ConversationList({ session, groupId, members, enterClass
   }
 
   function openModal() {
+    resetDm()
     setNewChatMode('dm')
     setSelectedMembers(new Set())
     setNewDmOpen(true)
@@ -375,7 +376,7 @@ export default function ConversationList({ session, groupId, members, enterClass
                   {/* Trash button */}
                   {deletable && (
                     <button
-                      onClick={() => setConfirmDeleteConv(conv)}
+                      onClick={() => { resetDeleteConfirm(); setConfirmDeleteConv(conv) }}
                       className="shrink-0 px-4 flex items-center text-stone-300 hover:text-red-500 active:text-red-600 transition-colors"
                     >
                       {isDeleting ? <span className="text-xs text-stone-300">…</span> : <Trash size={16} />}

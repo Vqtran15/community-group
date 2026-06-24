@@ -261,7 +261,7 @@ function PrayerModal({ friend, displayName, onClose, onFriendDelete, onFriendRen
         </div>
 
         {/* Scrollable body */}
-        <div className="overflow-y-auto flex-1 px-6">
+        <div className="overflow-y-auto min-h-0 px-6">
           {/* Add request form */}
           <form onSubmit={handleAdd} className="space-y-3 pb-5 border-b border-stone-100">
             <div>
