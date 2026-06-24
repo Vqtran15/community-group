@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { HandsPraying, X, Plus, Trash, PencilSimple, Check, GearSix } from '@phosphor-icons/react'
+import { HandsPraying, X, Plus, Trash, PencilSimple, Check, GearSix, UserPlus } from '@phosphor-icons/react'
 import { supabase } from '../lib/supabase.js'
 import { useModalClose } from '../hooks/useModalClose.js'
 import { useEntranceAnimation } from '../hooks/useEntranceAnimation.js'
@@ -205,11 +205,11 @@ function PrayerModal({ friend, displayName, onClose, onFriendDelete, onFriendRen
 
   return (
     <div
-      className={`fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 ${closing ? 'animate-overlay-out' : 'animate-overlay-in'}`}
+      className={`fixed inset-0 bg-black/50 flex items-end z-50 ${closing ? 'animate-overlay-out' : 'animate-overlay-in'}`}
       onClick={close}
     >
       <div
-        className={`bg-white rounded-2xl shadow-xl w-full max-w-sm flex flex-col max-h-[90vh] ${closing ? 'animate-modal-out' : 'animate-modal-in'}`}
+        className={`bg-white rounded-t-2xl shadow-xl w-full flex flex-col max-h-[90vh] ${closing ? 'animate-modal-out' : 'animate-modal-in'}`}
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
@@ -379,7 +379,7 @@ function PrayerModal({ friend, displayName, onClose, onFriendDelete, onFriendRen
         </div>
 
         {/* Remove friend footer */}
-        <div className="px-6 pb-6 pt-3 border-t border-stone-100 shrink-0">
+        <div className="px-6 pt-3 border-t border-stone-100 shrink-0" style={{ paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}>
           {!confirmDelete ? (
             <button
               type="button"
@@ -516,9 +516,10 @@ export default function PrayerTab({ displayName, onOpenSettings }) {
           </button>
           <button
             onClick={() => setAddOpen(true)}
-            className="flex items-center gap-1.5 px-4 py-2 bg-jade hover:bg-jade-700 active:bg-jade-800 text-white rounded-lg text-sm font-medium transition-colors whitespace-nowrap"
+            className="w-9 h-9 flex items-center justify-center rounded-xl bg-jade hover:bg-jade-700 active:bg-jade-800 text-white transition-colors"
+            title="Add friend"
           >
-            + Add Friend
+            <UserPlus size={20} weight="bold" />
           </button>
         </div>
       </div>

@@ -121,7 +121,7 @@ export default {
         },
       },
       animation: {
-        'modal-in':         'modal-in 0.25s cubic-bezier(0.32,0.72,0,1)',
+        'modal-in':         'modal-in 0.25s cubic-bezier(0.32,0.72,0,1) backwards',
         'modal-out':        'modal-out 0.18s cubic-bezier(0.32,0.72,0,1) forwards',
         'overlay-in':       'overlay-in 0.22s ease-out',
         'overlay-out':      'overlay-out 0.18s ease-in forwards',

@@ -280,10 +280,10 @@ export default function ConversationList({ session, groupId, members, enterClass
           </button>
           <button
             onClick={openModal}
-            className="flex items-center gap-1.5 px-3 h-9 rounded-xl bg-jade text-white text-sm font-medium hover:bg-jade-700 transition-colors"
+            className="w-9 h-9 flex items-center justify-center rounded-xl bg-jade text-white hover:bg-jade-700 transition-colors"
+            title="New message"
           >
-            <PencilSimple size={16} weight="bold" />
-            New message
+            <PencilSimple size={20} weight="bold" />
           </button>
         </div>
       </div>
