@@ -15,6 +15,7 @@ export function usePushNotifications(userId, groupId) {
     && 'serviceWorker' in navigator
     && 'PushManager' in window
     && !!VAPID_PUBLIC_KEY
+    && window.matchMedia('(display-mode: standalone)').matches
 
   const [permission, setPermission]   = useState(() =>
     typeof Notification !== 'undefined' ? Notification.permission : 'default'
@@ -32,7 +33,7 @@ export function usePushNotifications(userId, groupId) {
         .then(reg => reg.pushManager.getSubscription())
         .then(sub => setSubscribed(!!sub))
         .catch(() => {})
-    }, 500)
+    }, 2000)
     return () => clearTimeout(timer)
   }, [supported, userId, groupId])
 
