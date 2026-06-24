@@ -29,6 +29,15 @@ export function usePushNotifications(userId, groupId) {
     )
   }, [supported, userId, groupId])
 
+  async function swReady() {
+    return Promise.race([
+      navigator.serviceWorker.ready,
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Service worker timed out')), 10000)
+      ),
+    ])
+  }
+
   async function subscribe() {
     if (!supported) return
     setToggling(true)
@@ -37,7 +46,7 @@ export function usePushNotifications(userId, groupId) {
       setPermission(perm)
       if (perm !== 'granted') return
 
-      const reg = await navigator.serviceWorker.ready
+      const reg = await swReady()
       const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
@@ -52,6 +61,8 @@ export function usePushNotifications(userId, groupId) {
       }, { onConflict: 'user_id, endpoint' })
 
       setSubscribed(true)
+    } catch (err) {
+      console.error('Push subscribe error:', err)
     } finally {
       setToggling(false)
     }
@@ -60,13 +71,15 @@ export function usePushNotifications(userId, groupId) {
   async function unsubscribe() {
     setToggling(true)
     try {
-      const reg = await navigator.serviceWorker.ready
+      const reg = await swReady()
       const sub = await reg.pushManager.getSubscription()
       if (sub) {
         await supabase.from('push_subscriptions').delete().eq('endpoint', sub.endpoint)
         await sub.unsubscribe()
       }
       setSubscribed(false)
+    } catch (err) {
+      console.error('Push unsubscribe error:', err)
     } finally {
       setToggling(false)
     }
