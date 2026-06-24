@@ -22,11 +22,12 @@ function shortDate(dateStr) {
   return new Date(y, m - 1, d).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
 }
 
-function Card({ icon, iconBg, label, primary, secondary, onClick }) {
+function Card({ icon, iconBg, label, primary, secondary, onClick, delay = 0 }) {
   return (
     <button
       onClick={onClick}
-      className="w-full flex items-center gap-4 bg-white rounded-2xl p-4 border border-stone-100 shadow-sm active:bg-stone-50 transition-colors text-left"
+      style={{ animationDelay: `${delay}ms` }}
+      className="w-full flex items-center gap-4 bg-white rounded-2xl p-4 border border-stone-100 shadow-sm active:bg-stone-50 transition-colors text-left animate-stack-in"
     >
       <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${iconBg}`}>
         {icon}
@@ -188,7 +189,7 @@ export default function OverviewTab({ displayName, groupName, groupId, isAdmin, 
 
   return (
     <main className="max-w-3xl mx-auto px-4 pt-8 pb-12">
-      <div className="mb-7">
+      <div className="mb-7 animate-fade-up" style={{ animationDelay: '0ms' }}>
         <h1 className="text-3xl font-bold text-stone-800 flex items-center gap-2">
           {timeGreeting()}{displayName ? `, ${displayName.split(' ')[0]}` : ''}
           <HandWaving size={30} weight="fill" className="text-amber-400 animate-wave origin-bottom" />
@@ -199,7 +200,10 @@ export default function OverviewTab({ displayName, groupName, groupId, isAdmin, 
       <div className="space-y-3">
         {/* Announcement — always first */}
         {showAnnouncement && (
-          <div className="w-full bg-jade-50 border border-jade/20 rounded-2xl p-4">
+          <div
+            className="w-full bg-jade-50 border border-jade/20 rounded-2xl p-4 animate-stack-in"
+            style={{ animationDelay: '70ms' }}
+          >
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-xl bg-jade/15 flex items-center justify-center shrink-0 mt-0.5">
                 <Megaphone size={22} weight="fill" className="text-jade" />
@@ -231,6 +235,7 @@ export default function OverviewTab({ displayName, groupName, groupId, isAdmin, 
           label="Next Meal"
           primary={nextMeal === undefined ? 'Loading…' : nextMeal?.title ?? 'No upcoming meals'}
           secondary={nextMeal?.week_date ? shortDate(nextMeal.week_date) : null}
+          delay={showAnnouncement ? 140 : 70}
         />
         <Card
           onClick={() => navigate('/services')}
@@ -239,6 +244,7 @@ export default function OverviewTab({ displayName, groupName, groupId, isAdmin, 
           label="Next Service"
           primary={nextService === undefined ? 'Loading…' : nextService?.title ?? 'No upcoming services'}
           secondary={nextService?.week_date ? shortDate(nextService.week_date) : null}
+          delay={showAnnouncement ? 210 : 140}
         />
         <Card
           onClick={onOpenBirthdays}
@@ -247,6 +253,7 @@ export default function OverviewTab({ displayName, groupName, groupId, isAdmin, 
           label="Upcoming Birthdays"
           primary={birthdayPrimary()}
           secondary={sortedBirthdays.length > 1 ? `${sortedBirthdays.length} people total` : null}
+          delay={showAnnouncement ? 280 : 210}
         />
         <Card
           onClick={onOpenGuide}
@@ -255,11 +262,15 @@ export default function OverviewTab({ displayName, groupName, groupId, isAdmin, 
           label="Guide"
           primary="Bridgetown Community Guide"
           secondary="Tap to open"
+          delay={showAnnouncement ? 350 : 280}
         />
 
         {/* Fun Fact */}
         {funFact !== null && (
-          <div className="w-full bg-amber-50 border border-amber-100 rounded-2xl p-4">
+          <div
+            className="w-full bg-amber-50 border border-amber-100 rounded-2xl p-4 animate-stack-in"
+            style={{ animationDelay: `${showAnnouncement ? 420 : 350}ms` }}
+          >
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center shrink-0 mt-0.5">
                 <Lightbulb size={22} weight="fill" className="text-amber-500" />
