@@ -30,7 +30,7 @@ export default function ConversationList({ session, groupId, members, enterClass
   const [loading, setLoading]             = useState(true)
   const [newDmOpen, setNewDmOpen]         = useState(false)
   const [starting, setStarting]           = useState(false)
-  const [dmClosing, closeDm, , resetDm]   = useModalClose(() => setNewDmOpen(false))
+  const [dmClosing, closeDm, resetDm]     = useModalClose(() => setNewDmOpen(false))
   const [searchOpen, setSearchOpen]       = useState(false)
   const [searchQuery, setSearchQuery]     = useState('')
   const [newChatMode, setNewChatMode]         = useState('dm')
