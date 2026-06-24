@@ -260,7 +260,7 @@ export default function OverviewTab({ displayName, groupName, groupId, isAdmin, 
           icon={<BookOpen size={24} weight="fill" className="text-stone-500" />}
           iconBg="bg-stone-100"
           label="Guide"
-          primary="Bridgetown Community Guide"
+          primary="Community Guide"
           secondary="Tap to open"
           delay={showAnnouncement ? 350 : 280}
         />
