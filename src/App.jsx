@@ -122,10 +122,10 @@ export default function App() {
   }, [session])
 
   const displayName = profile?.display_name ?? ''
-  const push = usePushNotifications(session?.user?.id, groupId)
   const groupName   = profile?.community_groups?.name ?? session?.user?.user_metadata?.community_group_name ?? ''
   const groupId     = profile?.community_group_id ?? null
   const isAdmin     = profile?.role === 'admin'
+  const push = usePushNotifications(session?.user?.id, groupId)
 
   useEffect(() => {
     if (!session) return
