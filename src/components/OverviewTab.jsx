@@ -192,12 +192,14 @@ export default function OverviewTab({ displayName, groupName, groupId, isAdmin, 
       <div className="mb-7 animate-fade-up flex items-start justify-between" style={{ animationDelay: '0ms' }}>
         <div>
           <h1 className="text-3xl font-bold text-stone-800">
-            {timeGreeting()}
-            {displayName && (
-              <span>, {displayName.split(' ')[0]} <HandWaving size={28} weight="fill" className="inline-block text-amber-400 animate-wave origin-bottom align-middle" /></span>
-            )}
+            {timeGreeting()}{displayName ? `, ${displayName.split(' ')[0]}` : ''}
           </h1>
-          {groupName && <p className="text-stone-500 mt-1 text-sm">{groupName}</p>}
+          {groupName && (
+            <p className="text-stone-500 mt-1 text-sm flex items-center gap-1.5">
+              {groupName}
+              <HandWaving size={16} weight="fill" className="inline-block text-amber-400 animate-wave origin-bottom shrink-0" />
+            </p>
+          )}
         </div>
         <button
           onClick={onOpenSettings}
