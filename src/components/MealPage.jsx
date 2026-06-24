@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Plus } from '@phosphor-icons/react'
+import { Plus, PauseCircle, PlayCircle } from '@phosphor-icons/react'
 import { supabase } from '../lib/supabase.js'
 import { formatDate } from '../utils/dates.js'
 import { useEntranceAnimation } from '../hooks/useEntranceAnimation.js'
@@ -7,11 +7,12 @@ import SlotCard from './SlotCard.jsx'
 import SignupModal from './SignupModal.jsx'
 import EditDishesModal from './EditDishesModal.jsx'
 
-export default function MealPage({ page, noun, itemNoun, editLabel, tables, revealKey, pageCount, canGoPrev, canGoNext, onPrevPage, onNextPage, onPageUpdate, onPageDelete, editOpen, onEditClose }) {
+export default function MealPage({ page, noun, itemNoun, editLabel, tables, revealKey, pageCount, canGoPrev, canGoNext, onPrevPage, onNextPage, onPageUpdate, onPageDelete, editOpen, onEditClose, isAdmin = false }) {
   const [signups, setSignups]           = useState([])
   const [loading, setLoading]           = useState(true)
   const [selectedSlot, setSelectedSlot] = useState(null)
   const [justAddedSlot, setJustAddedSlot] = useState(null)
+  const [pausing, setPausing]           = useState(false)
   const { className: headerEntranceClass } = useEntranceAnimation(`${revealKey}-${page?.id}`, 0, { direction: 'left' })
 
   useEffect(() => {
@@ -172,6 +173,13 @@ export default function MealPage({ page, noun, itemNoun, editLabel, tables, reve
     onEditClose()
   }
 
+  async function handleTogglePause() {
+    setPausing(true)
+    const { error } = await supabase.rpc('toggle_meal_pause', { p_page_id: page.id })
+    if (!error) onPageUpdate({ ...page, is_paused: !page.is_paused })
+    setPausing(false)
+  }
+
   const slots = Array.from({ length: page.slot_count }, (_, i) => i + 1)
   const filledCount = signups.length
   const selectedDishName = selectedSlot != null ? (page.slot_dishes?.[selectedSlot - 1] ?? '') : ''
@@ -201,14 +209,39 @@ export default function MealPage({ page, noun, itemNoun, editLabel, tables, reve
               )}
             </div>
             <p className="text-stone-500 mt-1">{formatDate(page.week_date)}</p>
-            <p className="text-sm text-stone-400 mt-0.5">
-              {filledCount} / {page.slot_count} {noun.toLowerCase()}s filled
-            </p>
+            {page.is_paused ? (
+              <p className="text-sm text-amber-500 font-medium mt-0.5">Paused — no signup this week</p>
+            ) : (
+              <p className="text-sm text-stone-400 mt-0.5">
+                {filledCount} / {page.slot_count} {noun.toLowerCase()}s filled
+              </p>
+            )}
           </div>
+          {isAdmin && (
+            <button
+              onClick={handleTogglePause}
+              disabled={pausing}
+              title={page.is_paused ? 'Resume signup' : 'Pause signup'}
+              className="shrink-0 mt-0.5 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 border border-stone-200 text-stone-500 hover:border-amber-300 hover:text-amber-500 hover:bg-amber-50"
+            >
+              {page.is_paused
+                ? <><PlayCircle size={14} weight="fill" /> Resume</>
+                : <><PauseCircle size={14} weight="fill" /> Pause</>
+              }
+            </button>
+          )}
         </div>
       </div>
 
-      {loading ? (
+      {page.is_paused ? (
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <PauseCircle size={48} weight="fill" className="text-amber-300 mb-3" />
+          <p className="text-lg font-semibold text-stone-700">Signup paused</p>
+          <p className="text-sm text-stone-400 mt-1">
+            Paused for {formatDate(page.week_date)}
+          </p>
+        </div>
+      ) : loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {slots.map(n => (
             <div key={n} className="h-24 bg-stone-100 rounded-xl animate-pulse" />

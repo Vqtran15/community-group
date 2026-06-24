@@ -123,7 +123,7 @@ export default function OverviewTab({ displayName, groupName, groupId, isAdmin, 
 
     supabase
       .from('meal_pages')
-      .select('id, title, week_date')
+      .select('id, title, week_date, is_paused')
       .gte('week_date', today)
       .order('week_date')
       .limit(1)
@@ -245,8 +245,8 @@ export default function OverviewTab({ displayName, groupName, groupId, isAdmin, 
           icon={<ForkKnife size={24} weight="fill" className="text-jade" />}
           iconBg="bg-jade/10"
           label="Next Meal"
-          primary={nextMeal === undefined ? 'Loading…' : nextMeal?.title ?? 'No upcoming meals'}
-          secondary={nextMeal?.week_date ? shortDate(nextMeal.week_date) : null}
+          primary={nextMeal === undefined ? 'Loading…' : nextMeal?.is_paused ? 'No meal signup this week' : nextMeal?.title ?? 'No upcoming meals'}
+          secondary={nextMeal?.week_date && !nextMeal?.is_paused ? shortDate(nextMeal.week_date) : null}
           delay={showAnnouncement ? 140 : 70}
         />
         <Card
