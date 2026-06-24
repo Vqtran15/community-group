@@ -17,8 +17,9 @@ function formatLastUpdated(requests) {
   )
   const d = new Date(latest.created_at)
   const now = new Date()
-  const diffMs = now - d
-  const diffDays = Math.floor(diffMs / 86400000)
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const dDay  = new Date(d.getFullYear(), d.getMonth(), d.getDate())
+  const diffDays = Math.round((today - dDay) / 86400000)
   if (diffDays === 0) return 'Today'
   if (diffDays === 1) return 'Yesterday'
   if (diffDays < 7)  return `${diffDays} days ago`
