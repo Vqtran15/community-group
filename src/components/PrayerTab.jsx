@@ -101,7 +101,7 @@ function AddFriendModal({ onClose, onSave }) {
   )
 }
 
-function PrayerModal({ friend, displayName, onClose, onFriendDelete, onFriendRename, onCountChange }) {
+function PrayerModal({ friend, displayName, isAdmin, onClose, onFriendDelete, onFriendRename, onCountChange }) {
   const [closing, close] = useModalClose(onClose)
   const [requests, setRequests]           = useState([])
   const [loading, setLoading]             = useState(true)
@@ -405,38 +405,40 @@ function PrayerModal({ friend, displayName, onClose, onFriendDelete, onFriendRen
           </div>
         </div>
 
-        {/* Remove friend footer */}
-        <div className="px-6 pt-3 border-t border-stone-100 shrink-0" style={{ paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}>
-          {!confirmDelete ? (
-            <button
-              type="button"
-              onClick={() => setConfirmDelete(true)}
-              className="w-full py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors text-sm font-medium"
-            >
-              Remove Friend
-            </button>
-          ) : (
-            <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-              <span className="text-sm text-red-700 flex-1">Remove {friend.name}?</span>
+        {/* Remove friend footer — admin only */}
+        {isAdmin && (
+          <div className="px-6 pt-3 border-t border-stone-100 shrink-0" style={{ paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}>
+            {!confirmDelete ? (
               <button
                 type="button"
-                onClick={() => setConfirmDelete(false)}
-                disabled={deleting}
-                className="text-sm text-stone-500 hover:text-stone-700 font-medium px-3 py-2.5 min-h-[44px] disabled:opacity-50"
+                onClick={() => setConfirmDelete(true)}
+                className="w-full py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors text-sm font-medium"
               >
-                Cancel
+                Remove Friend
               </button>
-              <button
-                type="button"
-                onClick={handleDeleteFriend}
-                disabled={deleting}
-                className="text-sm text-white bg-red-500 hover:bg-red-600 font-medium px-4 py-2.5 min-h-[44px] rounded-lg disabled:opacity-50 transition-colors"
-              >
-                {deleting ? 'Removing…' : 'Remove'}
-              </button>
-            </div>
-          )}
-        </div>
+            ) : (
+              <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                <span className="text-sm text-red-700 flex-1">Remove {friend.name}?</span>
+                <button
+                  type="button"
+                  onClick={() => setConfirmDelete(false)}
+                  disabled={deleting}
+                  className="text-sm text-stone-500 hover:text-stone-700 font-medium px-3 py-2.5 min-h-[44px] disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDeleteFriend}
+                  disabled={deleting}
+                  className="text-sm text-white bg-red-500 hover:bg-red-600 font-medium px-4 py-2.5 min-h-[44px] rounded-lg disabled:opacity-50 transition-colors"
+                >
+                  {deleting ? 'Removing…' : 'Remove'}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )
@@ -472,7 +474,7 @@ function FriendCard({ friend, index, onClick }) {
   )
 }
 
-export default function PrayerTab({ displayName, onOpenSettings }) {
+export default function PrayerTab({ displayName, isAdmin, onOpenSettings }) {
   const [friends, setFriends]           = useState([])
   const [loading, setLoading]           = useState(true)
   const [addOpen, setAddOpen]           = useState(false)
@@ -541,13 +543,15 @@ export default function PrayerTab({ displayName, onOpenSettings }) {
           >
             <GearSix size={20} weight="regular" />
           </button>
-          <button
-            onClick={() => setAddOpen(true)}
-            className="w-9 h-9 flex items-center justify-center rounded-xl bg-jade hover:bg-jade-700 active:bg-jade-800 text-white transition-colors"
-            title="Add friend"
-          >
-            <UserPlus size={20} weight="bold" />
-          </button>
+          {isAdmin && (
+            <button
+              onClick={() => setAddOpen(true)}
+              className="w-9 h-9 flex items-center justify-center rounded-xl bg-jade hover:bg-jade-700 active:bg-jade-800 text-white transition-colors"
+              title="Add friend"
+            >
+              <UserPlus size={20} weight="bold" />
+            </button>
+          )}
         </div>
       </div>
 
@@ -581,6 +585,7 @@ export default function PrayerTab({ displayName, onOpenSettings }) {
         <PrayerModal
           friend={selectedFriend}
           displayName={displayName}
+          isAdmin={isAdmin}
           onClose={() => setSelectedFriend(null)}
           onFriendDelete={handleFriendDelete}
           onFriendRename={handleFriendRename}
