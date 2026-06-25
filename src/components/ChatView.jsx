@@ -140,6 +140,12 @@ export default function ChatView({ conversation, session, displayName, groupId, 
   const myId = session.user.id
   const convId = conversation.id
 
+  // Resolve the current display name for a message sender.
+  // Falls back to the stored name for users who've left the group.
+  function senderName(userId, storedName) {
+    return members.find(m => m.user_id === userId)?.display_name || storedName
+  }
+
   function convTitle() {
     if (conversation.type === 'direct') {
       const otherId = conversation.conversation_members?.find(m => m.user_id !== myId)?.user_id
@@ -299,12 +305,6 @@ export default function ChatView({ conversation, session, displayName, groupId, 
     }
   }, [imagePreview])
 
-  useEffect(() => {
-    if (!displayName || !myId) return
-    setMessages(prev => prev.map(m =>
-      m.user_id === myId ? { ...m, display_name: displayName } : m
-    ))
-  }, [displayName])
 
   useEffect(() => {
     if (!selectedMsgId && !confirmDeleteId) return
@@ -752,13 +752,13 @@ export default function ChatView({ conversation, session, displayName, groupId, 
                   )}
                   {!isOwn && (
                     <div className="w-8 shrink-0 self-start mt-1">
-                      {isFirstInGroup && <Initials name={msg.display_name} userId={msg.user_id} icon={members.find(m => m.user_id === msg.user_id)?.avatar_icon} colorKey={members.find(m => m.user_id === msg.user_id)?.avatar_color} />}
+                      {isFirstInGroup && <Initials name={senderName(msg.user_id, msg.display_name)} userId={msg.user_id} icon={members.find(m => m.user_id === msg.user_id)?.avatar_icon} colorKey={members.find(m => m.user_id === msg.user_id)?.avatar_color} />}
                     </div>
                   )}
 
                   <div className={`flex flex-col max-w-[75%] ${isOwn ? 'items-end' : 'items-start'} ${msg._isNew ? 'animate-message-in' : ''}`}>
                     {!isOwn && isFirstInGroup && (
-                      <p className="text-xs font-semibold text-stone-500 mb-1 ml-1">{msg.display_name}</p>
+                      <p className="text-xs font-semibold text-stone-500 mb-1 ml-1">{senderName(msg.user_id, msg.display_name)}</p>
                     )}
                     <div className={`overflow-hidden select-none transition-colors duration-200
                       ${editingMsgId === msg.id ? 'animate-edit-pop' : editClosingId === msg.id ? 'animate-edit-close' : ''}
@@ -774,7 +774,7 @@ export default function ChatView({ conversation, session, displayName, groupId, 
                         >
                           <div className={`pl-2 border-l-2 ${isOwn ? 'border-white/60' : 'border-jade'}`}>
                             <p className={`text-[11px] font-semibold truncate ${isOwn ? 'text-white/90' : 'text-jade'}`}>
-                              {msg.reply_message.display_name}
+                              {senderName(msg.reply_message.user_id, msg.reply_message.display_name)}
                             </p>
                             <p className={`text-[11px] truncate ${isOwn ? 'text-white/70' : 'text-stone-500'}`}>
                               {msg.reply_message.image_url && !msg.reply_message.body ? '📷 Photo' : msg.reply_message.body}
@@ -869,7 +869,7 @@ export default function ChatView({ conversation, session, displayName, groupId, 
           <div className="flex items-center gap-2 bg-jade/5 border border-jade/20 rounded-xl px-3 py-2 mb-2">
             <div className="w-0.5 self-stretch bg-jade rounded-full shrink-0" />
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-jade truncate">{replyingTo.display_name}</p>
+              <p className="text-xs font-semibold text-jade truncate">{senderName(replyingTo.user_id, replyingTo.display_name)}</p>
               <p className="text-xs text-stone-400 truncate">
                 {replyingTo.image_url && !replyingTo.body ? '📷 Photo' : replyingTo.body}
               </p>

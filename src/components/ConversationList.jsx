@@ -140,7 +140,10 @@ export default function ConversationList({ session, groupId, members, enterClass
     const body = msg.image_url && !msg.body ? '📷 Photo'
       : msg.image_url ? `📷 ${msg.body}`
       : (msg.body || '')
-    if (conv.type === 'group') return `${msg.display_name}: ${body}`
+    if (conv.type === 'group') {
+      const name = members.find(m => m.user_id === msg.user_id)?.display_name || msg.display_name
+      return `${name}: ${body}`
+    }
     return body
   }
 

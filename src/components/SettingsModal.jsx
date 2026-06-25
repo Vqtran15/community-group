@@ -134,8 +134,6 @@ export default function SettingsModal({ groupName, displayName, groupId, isAdmin
     if (error) {
       toast('Failed to update name', 'error')
     } else {
-      // Update display_name on historical messages so chat history reflects the new name
-      await supabase.from('messages').update({ display_name: trimmed }).eq('user_id', userId)
       // Keep the local admin members list in sync
       setMembers(prev => prev.map(m => m.user_id === userId ? { ...m, display_name: trimmed } : m))
       onDisplayNameChange?.(trimmed)
