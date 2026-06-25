@@ -3,18 +3,18 @@ import { GearSix, SignOut, Trash, Crown, X, Bell, BellSlash, PencilSimple, Lock,
 import { useModalClose } from '../hooks/useModalClose.js'
 import { supabase } from '../lib/supabase.js'
 import { useToast } from '../lib/toast.jsx'
-import { AVATAR_ICON_LIST, AvatarIcon, avatarColor } from '../lib/avatarIcons.jsx'
+import { AVATAR_ICON_LIST, AVATAR_COLOR_OPTIONS, AvatarIcon, avatarColor } from '../lib/avatarIcons.jsx'
 
 function initials(name) {
   return (name ?? '?').split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase()
 }
 
-function AvatarCircle({ icon, name, userId, size = 'md' }) {
+function AvatarCircle({ icon, name, userId, colorKey, size = 'md' }) {
   const dim = size === 'lg' ? 'w-16 h-16' : size === 'sm' ? 'w-7 h-7' : 'w-10 h-10'
   const iconSize = size === 'lg' ? 28 : size === 'sm' ? 13 : 20
   const textCls = size === 'lg' ? 'text-xl font-bold' : size === 'sm' ? 'text-[11px] font-bold' : 'text-sm font-bold'
   return (
-    <div className={`${dim} rounded-full ${avatarColor(userId)} flex items-center justify-center shrink-0`}>
+    <div className={`${dim} rounded-full ${avatarColor(userId, colorKey)} flex items-center justify-center shrink-0`}>
       {icon
         ? <AvatarIcon name={icon} size={iconSize} />
         : <span className={`${textCls} text-white`}>{initials(name)}</span>
@@ -36,8 +36,10 @@ export default function SettingsModal({ groupName, displayName, groupId, isAdmin
   const [settingRoleId, setSettingRoleId] = useState(null)
   const [removingId, setRemovingId] = useState(null)
   const [avatarIcon, setAvatarIcon] = useState(null)
+  const [avatarColorKey, setAvatarColorKey] = useState(null)
   const [avatarPickerOpen, setAvatarPickerOpen] = useState(false)
   const [savingAvatar, setSavingAvatar] = useState(false)
+  const [savingColor, setSavingColor] = useState(false)
   const [email, setEmail] = useState('')
   const [nameOpen, setNameOpen] = useState(false)
   const [nameValue, setNameValue] = useState('')
@@ -58,10 +60,13 @@ export default function SettingsModal({ groupName, displayName, groupId, isAdmin
     if (!userId) return
     supabase
       .from('profiles')
-      .select('avatar_icon')
+      .select('avatar_icon, avatar_color')
       .eq('user_id', userId)
       .single()
-      .then(({ data }) => setAvatarIcon(data?.avatar_icon ?? null))
+      .then(({ data }) => {
+        setAvatarIcon(data?.avatar_icon ?? null)
+        setAvatarColorKey(data?.avatar_color ?? null)
+      })
     supabase.auth.getUser().then(({ data: { user } }) => setEmail(user?.email ?? ''))
   }, [userId])
 
@@ -80,7 +85,7 @@ export default function SettingsModal({ groupName, displayName, groupId, isAdmin
     const id = setTimeout(() => {
       supabase
         .from('profiles')
-        .select('user_id, display_name, role, avatar_icon')
+        .select('user_id, display_name, role, avatar_icon, avatar_color')
         .eq('community_group_id', groupId)
         .order('display_name')
         .then(({ data }) => setMembers(data ?? []))
@@ -101,6 +106,20 @@ export default function SettingsModal({ groupName, displayName, groupId, isAdmin
       setAvatarPickerOpen(false)
     }
     setSavingAvatar(false)
+  }
+
+  async function handleSelectColor(colorKey) {
+    setSavingColor(true)
+    const { error } = await supabase
+      .from('profiles')
+      .update({ avatar_color: colorKey })
+      .eq('user_id', userId)
+    if (error) {
+      toast('Failed to save color', 'error')
+    } else {
+      setAvatarColorKey(colorKey)
+    }
+    setSavingColor(false)
   }
 
   async function handleChangeName(e) {
@@ -261,7 +280,7 @@ export default function SettingsModal({ groupName, displayName, groupId, isAdmin
               <div className="space-y-0.5">
                 {members.map(m => (
                   <div key={m.user_id} className="flex items-center gap-2.5 py-1.5">
-                    <AvatarCircle icon={m.avatar_icon} name={m.display_name} userId={m.user_id} size="sm" />
+                    <AvatarCircle icon={m.avatar_icon} name={m.display_name} userId={m.user_id} colorKey={m.avatar_color} size="sm" />
                     <div className="flex items-center gap-1 flex-1 min-w-0">
                       <span className="text-sm text-stone-700 truncate">{m.display_name}</span>
                       {m.role === 'admin' && <Crown size={11} weight="fill" className="text-jade shrink-0" />}
@@ -336,7 +355,7 @@ export default function SettingsModal({ groupName, displayName, groupId, isAdmin
             {/* Avatar picker */}
             <div className="flex items-center gap-4 px-1 mb-3">
               <div className="relative shrink-0">
-                <AvatarCircle icon={avatarIcon} name={displayName} userId={userId} size="lg" />
+                <AvatarCircle icon={avatarIcon} name={displayName} userId={userId} colorKey={avatarColorKey} size="lg" />
                 <button
                   onClick={() => setAvatarPickerOpen(o => !o)}
                   className="absolute -bottom-0.5 -right-0.5 w-6 h-6 rounded-full bg-jade text-white flex items-center justify-center shadow-sm"
@@ -369,27 +388,49 @@ export default function SettingsModal({ groupName, displayName, groupId, isAdmin
             </div>
 
             {avatarPickerOpen && (
-              <div className="mb-3 p-3 bg-stone-50 rounded-2xl border border-stone-100">
-                <p className="text-xs text-stone-400 font-medium mb-2">Pick an icon</p>
-                <div className="grid grid-cols-6 gap-1.5">
-                  {AVATAR_ICON_LIST.map(({ name, Icon }) => (
-                    <button
-                      key={name}
-                      onClick={() => handleSelectAvatar(name)}
-                      disabled={savingAvatar}
-                      className={`h-11 rounded-xl flex items-center justify-center transition-colors ${
-                        avatarIcon === name
-                          ? `${avatarColor(userId)} ring-2 ring-offset-1 ring-jade`
-                          : 'bg-stone-100 hover:bg-stone-200 active:bg-stone-200'
-                      }`}
-                    >
-                      <Icon
-                        size={22}
-                        weight="fill"
-                        className={avatarIcon === name ? 'text-white' : 'text-stone-500'}
-                      />
-                    </button>
-                  ))}
+              <div className="mb-3 p-3 bg-stone-50 rounded-2xl border border-stone-100 space-y-3">
+                <div>
+                  <p className="text-xs text-stone-400 font-medium mb-2">Color</p>
+                  <div className="flex gap-2">
+                    {AVATAR_COLOR_OPTIONS.map(({ key, bgClass, label }) => (
+                      <button
+                        key={key}
+                        onClick={() => handleSelectColor(key)}
+                        disabled={savingColor}
+                        title={label}
+                        className={`w-9 h-9 rounded-full ${bgClass} flex items-center justify-center transition-transform active:scale-95 disabled:opacity-50 ${
+                          avatarColorKey === key ? 'ring-2 ring-offset-2 ring-stone-400 scale-110' : ''
+                        }`}
+                      >
+                        {avatarColorKey === key && (
+                          <span className="w-2 h-2 rounded-full bg-white/80" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-xs text-stone-400 font-medium mb-2">Icon</p>
+                  <div className="grid grid-cols-6 gap-1.5">
+                    {AVATAR_ICON_LIST.map(({ name, Icon }) => (
+                      <button
+                        key={name}
+                        onClick={() => handleSelectAvatar(name)}
+                        disabled={savingAvatar}
+                        className={`h-11 rounded-xl flex items-center justify-center transition-colors ${
+                          avatarIcon === name
+                            ? `${avatarColor(userId, avatarColorKey)} ring-2 ring-offset-1 ring-jade`
+                            : 'bg-stone-100 hover:bg-stone-200 active:bg-stone-200'
+                        }`}
+                      >
+                        <Icon
+                          size={22}
+                          weight="fill"
+                          className={avatarIcon === name ? 'text-white' : 'text-stone-500'}
+                        />
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}

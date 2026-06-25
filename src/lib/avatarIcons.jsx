@@ -150,9 +150,20 @@ export function AvatarIcon({ name, size = 18, className = 'text-white' }) {
   return <Icon size={size} weight="fill" className={className} />
 }
 
-const AVATAR_COLORS = ['bg-jade', 'bg-coral', 'bg-lagoon-700']
+export const AVATAR_COLOR_OPTIONS = [
+  { key: 'jade',        bgClass: 'bg-jade',         label: 'Rust'     },
+  { key: 'coral',       bgClass: 'bg-coral',         label: 'Clay'     },
+  { key: 'lagoon-700',  bgClass: 'bg-lagoon-700',    label: 'Amber'    },
+  { key: 'sage-700',    bgClass: 'bg-sage-700',      label: 'Forest'   },
+  { key: 'sunrise-800', bgClass: 'bg-sunrise-800',   label: 'Brown'    },
+  { key: 'stone-500',   bgClass: 'bg-stone-500',     label: 'Stone'    },
+]
 
-export function avatarColor(userId = '') {
+const AVATAR_COLOR_MAP = Object.fromEntries(AVATAR_COLOR_OPTIONS.map(o => [o.key, o.bgClass]))
+const AVATAR_COLORS_DEFAULT = ['bg-jade', 'bg-coral', 'bg-lagoon-700']
+
+export function avatarColor(userId = '', colorKey = null) {
+  if (colorKey && AVATAR_COLOR_MAP[colorKey]) return AVATAR_COLOR_MAP[colorKey]
   const n = (userId.charCodeAt(0) ?? 0) + (userId.charCodeAt((userId.length - 1) || 0) ?? 0)
-  return AVATAR_COLORS[n % AVATAR_COLORS.length]
+  return AVATAR_COLORS_DEFAULT[n % AVATAR_COLORS_DEFAULT.length]
 }

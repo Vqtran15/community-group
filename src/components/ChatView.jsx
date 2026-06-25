@@ -43,9 +43,9 @@ function initials(name) {
   return (name ?? '?').split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase()
 }
 
-function Initials({ name, userId, icon }) {
+function Initials({ name, userId, icon, colorKey }) {
   return (
-    <div className={`w-8 h-8 rounded-full ${avatarColor(userId)} flex items-center justify-center shrink-0`}>
+    <div className={`w-8 h-8 rounded-full ${avatarColor(userId, colorKey)} flex items-center justify-center shrink-0`}>
       {icon
         ? <AvatarIcon name={icon} size={16} />
         : <span className="text-white text-xs font-bold">{initials(name)}</span>
@@ -710,7 +710,7 @@ export default function ChatView({ conversation, session, displayName, groupId, 
                   )}
                   {!isOwn && (
                     <div className="w-8 shrink-0 self-start mt-1">
-                      {isFirstInGroup && <Initials name={msg.display_name} userId={msg.user_id} icon={members.find(m => m.user_id === msg.user_id)?.avatar_icon} />}
+                      {isFirstInGroup && <Initials name={msg.display_name} userId={msg.user_id} icon={members.find(m => m.user_id === msg.user_id)?.avatar_icon} colorKey={members.find(m => m.user_id === msg.user_id)?.avatar_color} />}
                     </div>
                   )}
 
@@ -1021,7 +1021,7 @@ export default function ChatView({ conversation, session, displayName, groupId, 
 
             {/* Avatar + name */}
             <div className="flex flex-col items-center py-5 px-5">
-              <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-3 ${conversation.type === 'group' ? 'bg-jade' : avatarColor(dmOtherMember?.user_id ?? '')}`}>
+              <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-3 ${conversation.type === 'group' ? 'bg-jade' : avatarColor(dmOtherMember?.user_id ?? '', dmOtherMember?.avatar_color)}`}>
                 {conversation.type === 'group'
                   ? <Users size={40} weight="fill" className="text-white" />
                   : dmOtherMember?.avatar_icon
@@ -1069,7 +1069,7 @@ export default function ChatView({ conversation, session, displayName, groupId, 
                 <div className="space-y-1">
                   {members.map(m => (
                     <div key={m.user_id} className="flex items-center gap-3 py-2">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${avatarColor(m.user_id)}`}>
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${avatarColor(m.user_id, m.avatar_color)}`}>
                         {m.avatar_icon
                           ? <AvatarIcon name={m.avatar_icon} size={20} />
                           : <span className="text-white text-sm font-bold">{initials(m.display_name)}</span>
