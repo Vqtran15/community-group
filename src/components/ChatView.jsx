@@ -117,6 +117,7 @@ export default function ChatView({ conversation, session, displayName, groupId, 
   const [confirmDeleteMsg, setConfirmDeleteMsg] = useState(false)
   const [editingMsgId, setEditingMsgId]         = useState(null)
   const [editText, setEditText]                 = useState('')
+  const [selectedMsgId, setSelectedMsgId]       = useState(null)
   const toast = useToast()
   const [renameValue, setRenameValue]       = useState('')
   const [renameSaving, setRenameSaving]     = useState(false)
@@ -130,8 +131,6 @@ export default function ChatView({ conversation, session, displayName, groupId, 
   const typingTimeoutRef   = useRef(null)
   const lastTapRef         = useRef(null)
   const preserveScrollRef  = useRef(null)
-  const longPressTimerRef  = useRef(null)
-  const longPressTouchPos  = useRef({ x: 0, y: 0 })
 
   const myId = session.user.id
   const convId = conversation.id
@@ -288,6 +287,13 @@ export default function ChatView({ conversation, session, displayName, groupId, 
     return () => document.removeEventListener('keydown', onKey)
   }, [searchOpen])
 
+  useEffect(() => {
+    if (!selectedMsgId) return
+    function clear() { setSelectedMsgId(null) }
+    document.addEventListener('click', clear)
+    return () => document.removeEventListener('click', clear)
+  }, [selectedMsgId])
+
   // ── Scroll ────────────────────────────────────────────────────────────────
   function handleScroll() {
     const el = scrollRef.current
@@ -439,37 +445,21 @@ export default function ChatView({ conversation, session, displayName, groupId, 
     openMenuFromEl(e.currentTarget, msgId, isOwn)
   }
 
-  function handleMsgTouchStart(e, msgId, isOwn) {
-    if (e.target.closest('button, a')) return
-    const el = e.currentTarget
-    longPressTouchPos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }
-    longPressTimerRef.current = setTimeout(() => {
-      window.getSelection()?.removeAllRanges()
-      haptic()
-      openMenuFromEl(el, msgId, isOwn)
-    }, 500)
-  }
-
-  function handleMsgTouchMove(e) {
-    const dx = Math.abs(e.touches[0].clientX - longPressTouchPos.current.x)
-    const dy = Math.abs(e.touches[0].clientY - longPressTouchPos.current.y)
-    if (dx > 8 || dy > 8) clearTimeout(longPressTimerRef.current)
-  }
-
-  function handleMsgTouchEnd() {
-    clearTimeout(longPressTimerRef.current)
-  }
-
   function handleDoubleTap(e, msgId, isOwn) {
     if (e.target.closest('button, a')) return
     const now = Date.now()
     const last = lastTapRef.current
     if (last && last.msgId === msgId && now - last.time < 300) {
       lastTapRef.current = null
-      if (isOwn) startEdit(msgId)
-      else openMenuFromEl(e.currentTarget, msgId, isOwn)
+      if (isOwn) {
+        e.stopPropagation()
+        setSelectedMsgId(prev => prev === msgId ? null : msgId)
+      } else {
+        openMenuFromEl(e.currentTarget, msgId, isOwn)
+      }
     } else {
       lastTapRef.current = { time: now, msgId }
+      if (selectedMsgId) setSelectedMsgId(null)
     }
   }
 
@@ -664,10 +654,15 @@ export default function ChatView({ conversation, session, displayName, groupId, 
                   className={`flex gap-2 ${isOwn ? 'justify-end' : 'justify-start'} ${isLastInGroup && !hasReactions ? 'mb-2' : 'mb-0'}`}
                   onContextMenu={e => { e.preventDefault(); openMenu(e, msg.id, isOwn) }}
                   onClick={e => handleDoubleTap(e, msg.id, isOwn)}
-                  onTouchStart={e => handleMsgTouchStart(e, msg.id, isOwn)}
-                  onTouchMove={handleMsgTouchMove}
-                  onTouchEnd={handleMsgTouchEnd}
                 >
+                  {isOwn && selectedMsgId === msg.id && !editingMsgId && (
+                    <button
+                      onClick={e => { e.stopPropagation(); setSelectedMsgId(null); deleteMessage(msg.id) }}
+                      className="self-center w-8 h-8 rounded-full bg-red-50 border border-red-100 text-red-400 hover:text-red-600 hover:bg-red-100 flex items-center justify-center shrink-0 transition-colors animate-overlay-in"
+                    >
+                      <Trash size={14} weight="fill" />
+                    </button>
+                  )}
                   {!isOwn && (
                     <div className="w-8 shrink-0 self-start mt-1">
                       {isFirstInGroup && <Initials name={msg.display_name} userId={msg.user_id} icon={members.find(m => m.user_id === msg.user_id)?.avatar_icon} />}
