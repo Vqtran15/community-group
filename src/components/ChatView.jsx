@@ -429,6 +429,11 @@ export default function ChatView({ conversation, session, displayName, groupId, 
     if (error) {
       if (original) setMessages(prev => [...prev, original].sort((a, b) => new Date(a.created_at) - new Date(b.created_at)))
       toast('Failed to delete message', 'error')
+      return
+    }
+    if (original?.image_url) {
+      const path = original.image_url.split('/chat-images/')[1]
+      if (path) await supabase.storage.from('chat-images').remove([path])
     }
   }
 
