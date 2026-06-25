@@ -128,6 +128,12 @@ export default {
           '50%':  { opacity: '1', transform: 'scale(1)' },
           '100%': { opacity: '0', transform: 'scale(0)' },
         },
+        'edit-pop': {
+          '0%':   { transform: 'scale(1)' },
+          '25%':  { transform: 'scale(0.96)' },
+          '70%':  { transform: 'scale(1.03)' },
+          '100%': { transform: 'scale(1)' },
+        },
       },
       animation: {
         'modal-in':         'modal-in 0.25s cubic-bezier(0.32,0.72,0,1) backwards',
@@ -148,6 +154,7 @@ export default {
         'wave':             'wave 2.5s ease-in-out infinite',
         'toast-in':        'toast-in 0.2s cubic-bezier(0.16,1,0.3,1)',
         'confetti-float':  'confetti-float 2s ease-in-out infinite backwards',
+        'edit-pop':        'edit-pop 0.28s cubic-bezier(0.16,1,0.3,1)',
       },
     },
   },

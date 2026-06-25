@@ -433,9 +433,7 @@ export default function ChatView({ conversation, session, displayName, groupId, 
     const rect = el.getBoundingClientRect()
     setMenuPos({
       bottom: Math.min(window.innerHeight - rect.top + 8, window.innerHeight - 72),
-      ...(isOwn
-        ? { right: Math.max(8, window.innerWidth - rect.right) }
-        : { left: Math.max(8, rect.left + 32) }),
+      ...(isOwn ? { right: Math.max(8, window.innerWidth - rect.right) } : {}),
     })
     setActiveMsg(msgId)
     setShowMoreEmojis(false)
@@ -658,35 +656,35 @@ export default function ChatView({ conversation, session, displayName, groupId, 
                   onClick={e => handleDoubleTap(e, msg.id, isOwn)}
                 >
                   {isOwn && selectedMsgId === msg.id && !editingMsgId && (
-                    <div className="self-center flex items-center gap-1 animate-overlay-in">
+                    <div className="self-center flex items-center gap-2 animate-overlay-in">
                       {msg.body && (
                         <button
                           onClick={e => { e.stopPropagation(); setSelectedMsgId(null); startEdit(msg.id) }}
-                          className="w-8 h-8 rounded-full bg-stone-100 border border-stone-200 text-stone-500 hover:text-stone-700 hover:bg-stone-200 flex items-center justify-center shrink-0 transition-colors"
+                          className="w-11 h-11 rounded-full bg-stone-100 border border-stone-200 text-stone-500 hover:text-stone-700 hover:bg-stone-200 flex items-center justify-center shrink-0 transition-colors"
                         >
-                          <PencilSimple size={13} weight="bold" />
+                          <PencilSimple size={17} weight="bold" />
                         </button>
                       )}
                       <button
                         onClick={e => { e.stopPropagation(); setSelectedMsgId(null); setConfirmDeleteId(msg.id) }}
-                        className="w-8 h-8 rounded-full bg-red-50 border border-red-100 text-red-400 hover:text-red-600 hover:bg-red-100 flex items-center justify-center shrink-0 transition-colors"
+                        className="w-11 h-11 rounded-full bg-red-50 border border-red-100 text-red-400 hover:text-red-600 hover:bg-red-100 flex items-center justify-center shrink-0 transition-colors"
                       >
-                        <Trash size={13} weight="fill" />
+                        <Trash size={17} weight="fill" />
                       </button>
                     </div>
                   )}
                   {isOwn && confirmDeleteId === msg.id && (
-                    <div className="self-center flex items-center gap-1.5 animate-overlay-in">
+                    <div className="self-center flex items-center gap-2 animate-overlay-in">
                       <span className="text-xs text-stone-400 whitespace-nowrap">Delete?</span>
                       <button
                         onClick={e => { e.stopPropagation(); setConfirmDeleteId(null) }}
-                        className="text-xs text-stone-400 hover:text-stone-600 font-medium px-2 py-1 rounded-lg bg-stone-100 hover:bg-stone-200 transition-colors"
+                        className="text-sm text-stone-400 hover:text-stone-600 font-medium px-3 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 transition-colors"
                       >
                         No
                       </button>
                       <button
                         onClick={e => { e.stopPropagation(); setConfirmDeleteId(null); deleteMessage(msg.id) }}
-                        className="text-xs text-white bg-red-500 hover:bg-red-600 font-medium px-2 py-1 rounded-lg transition-colors"
+                        className="text-sm text-white bg-red-500 hover:bg-red-600 font-medium px-3 py-2 rounded-xl transition-colors"
                       >
                         Yes
                       </button>
@@ -702,7 +700,7 @@ export default function ChatView({ conversation, session, displayName, groupId, 
                     {!isOwn && isFirstInGroup && (
                       <p className="text-xs font-semibold text-stone-500 mb-1 ml-1">{msg.display_name}</p>
                     )}
-                    <div className={`overflow-hidden select-none ${
+                    <div className={`overflow-hidden select-none ${editingMsgId === msg.id ? 'animate-edit-pop' : ''} ${
                       isOwn
                         ? `${editingMsgId === msg.id ? 'bg-stone-600' : 'bg-jade'} text-white ${isFirstInGroup ? 'rounded-t-2xl' : 'rounded-t-md'} ${isLastInGroup ? 'rounded-bl-2xl rounded-br-sm' : 'rounded-b-md'}`
                         : `bg-white border border-stone-200 text-stone-800 ${isFirstInGroup ? 'rounded-t-2xl' : 'rounded-t-md'} ${isLastInGroup ? 'rounded-br-2xl rounded-bl-sm' : 'rounded-b-md'}`
@@ -729,7 +727,7 @@ export default function ChatView({ conversation, session, displayName, groupId, 
                         </a>
                       )}
                       {editingMsgId === msg.id ? (
-                        <form onSubmit={handleSaveEdit} className="px-3 py-2">
+                        <form onSubmit={handleSaveEdit} className="px-3 py-2 animate-overlay-in">
                           <textarea
                             ref={editTextareaRef}
                             value={editText}
@@ -876,7 +874,7 @@ export default function ChatView({ conversation, session, displayName, groupId, 
       {activeMsg && menuPos && (
         <div
           className="fixed z-30 bg-white rounded-2xl shadow-xl border border-stone-100 p-1.5"
-          style={{ bottom: menuPos.bottom, ...('left' in menuPos ? { left: menuPos.left } : { right: menuPos.right }) }}
+          style={{ bottom: menuPos.bottom, ...('right' in menuPos ? { right: menuPos.right } : { left: '50%', transform: 'translateX(-50%)' }) }}
         >
           <div className="flex items-center gap-0.5">
             {EMOJIS.map(emoji => {
