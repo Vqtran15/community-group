@@ -736,9 +736,11 @@ export default function ChatView({ conversation, session, displayName, groupId, 
                         </button>
                       )}
                       {msg.image_url && (
-                        <a href={msg.image_url} target="_blank" rel="noopener noreferrer">
-                          <img src={msg.image_url} alt="shared" className="block max-w-full" style={{ maxHeight: 280 }} />
-                        </a>
+                        isOwn
+                          ? <img src={msg.image_url} alt="shared" className="block max-w-full" style={{ maxHeight: 280 }} />
+                          : <a href={msg.image_url} target="_blank" rel="noopener noreferrer">
+                              <img src={msg.image_url} alt="shared" className="block max-w-full" style={{ maxHeight: 280 }} />
+                            </a>
                       )}
                       {editingMsgId === msg.id ? (
                         <form onSubmit={handleSaveEdit} className="px-3 py-2 animate-overlay-in">
