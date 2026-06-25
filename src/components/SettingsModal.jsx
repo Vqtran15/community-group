@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { GearSix, SignOut, Trash, Crown, X, Bell, BellSlash, PencilSimple } from '@phosphor-icons/react'
+import { GearSix, SignOut, Trash, Crown, X, Bell, BellSlash, PencilSimple, Lock, Eye, EyeSlash } from '@phosphor-icons/react'
 import { useModalClose } from '../hooks/useModalClose.js'
 import { supabase } from '../lib/supabase.js'
 import { useToast } from '../lib/toast.jsx'
@@ -38,6 +38,14 @@ export default function SettingsModal({ groupName, displayName, groupId, isAdmin
   const [avatarIcon, setAvatarIcon] = useState(null)
   const [avatarPickerOpen, setAvatarPickerOpen] = useState(false)
   const [savingAvatar, setSavingAvatar] = useState(false)
+  const [pwOpen, setPwOpen] = useState(false)
+  const [currentPw, setCurrentPw] = useState('')
+  const [newPw, setNewPw] = useState('')
+  const [confirmPw, setConfirmPw] = useState('')
+  const [showCurrentPw, setShowCurrentPw] = useState(false)
+  const [showNewPw, setShowNewPw] = useState(false)
+  const [pwSaving, setPwSaving] = useState(false)
+  const [pwError, setPwError] = useState(null)
 
   useEffect(() => {
     if (!userId) return
@@ -85,6 +93,35 @@ export default function SettingsModal({ groupName, displayName, groupId, isAdmin
       setAvatarPickerOpen(false)
     }
     setSavingAvatar(false)
+  }
+
+  async function handleChangePassword(e) {
+    e.preventDefault()
+    setPwError(null)
+    if (newPw.length < 6) { setPwError('New password must be at least 6 characters.'); return }
+    if (newPw !== confirmPw) { setPwError('New passwords don\'t match.'); return }
+    setPwSaving(true)
+    const { data: { user } } = await supabase.auth.getUser()
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: user.email,
+      password: currentPw,
+    })
+    if (signInError) {
+      setPwError('Current password is incorrect.')
+      setPwSaving(false)
+      return
+    }
+    const { error } = await supabase.auth.updateUser({ password: newPw })
+    if (error) {
+      setPwError(error.message)
+      setPwSaving(false)
+      return
+    }
+    toast('Password updated', 'success')
+    setPwOpen(false)
+    setCurrentPw(''); setNewPw(''); setConfirmPw('')
+    setPwError(null)
+    setPwSaving(false)
   }
 
   function copyCode() {
@@ -311,6 +348,87 @@ export default function SettingsModal({ groupName, displayName, groupId, isAdmin
                   ))}
                 </div>
               </div>
+            )}
+
+            {/* Change password */}
+            {pwOpen ? (
+              <form onSubmit={handleChangePassword} className="mb-3 p-4 bg-stone-50 rounded-2xl border border-stone-100 space-y-3">
+                <p className="text-xs font-semibold text-stone-500">Change Password</p>
+
+                <div className="relative">
+                  <input
+                    type={showCurrentPw ? 'text' : 'password'}
+                    placeholder="Current password"
+                    value={currentPw}
+                    onChange={e => setCurrentPw(e.target.value)}
+                    required
+                    className="w-full text-sm bg-white border border-stone-200 rounded-xl px-3 py-2.5 pr-10 focus:outline-none focus:ring-2 focus:ring-jade placeholder:text-stone-300"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowCurrentPw(v => !v)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
+                  >
+                    {showCurrentPw ? <EyeSlash size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+
+                <div className="relative">
+                  <input
+                    type={showNewPw ? 'text' : 'password'}
+                    placeholder="New password"
+                    value={newPw}
+                    onChange={e => setNewPw(e.target.value)}
+                    required
+                    className="w-full text-sm bg-white border border-stone-200 rounded-xl px-3 py-2.5 pr-10 focus:outline-none focus:ring-2 focus:ring-jade placeholder:text-stone-300"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPw(v => !v)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
+                  >
+                    {showNewPw ? <EyeSlash size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+
+                <input
+                  type="password"
+                  placeholder="Confirm new password"
+                  value={confirmPw}
+                  onChange={e => setConfirmPw(e.target.value)}
+                  required
+                  className="w-full text-sm bg-white border border-stone-200 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-jade placeholder:text-stone-300"
+                />
+
+                {pwError && (
+                  <p className="text-xs text-red-500 px-1">{pwError}</p>
+                )}
+
+                <div className="flex gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => { setPwOpen(false); setCurrentPw(''); setNewPw(''); setConfirmPw(''); setPwError(null) }}
+                    className="flex-1 py-2 text-sm font-medium text-stone-600 bg-white border border-stone-200 rounded-xl hover:bg-stone-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={pwSaving || !currentPw || !newPw || !confirmPw}
+                    className="flex-1 py-2 text-sm font-medium text-white bg-jade rounded-xl hover:bg-jade-700 transition-colors disabled:opacity-40"
+                  >
+                    {pwSaving ? 'Saving…' : 'Update'}
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <button
+                onClick={() => setPwOpen(true)}
+                className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-stone-600 hover:text-stone-800 hover:bg-stone-50 rounded-xl transition-colors mb-1"
+              >
+                <Lock size={15} weight="bold" className="text-stone-400" />
+                Change password
+              </button>
             )}
 
             {showDeleteConfirm ? (

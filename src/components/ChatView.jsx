@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useLayoutEffect } from 'react'
 import {
   PaperPlaneTilt, Image as ImageIcon, X,
   MagnifyingGlass, ArrowDown, Trash, ArrowLeft, Notepad,
-  Users, ArrowBendUpLeft, Crown, PencilSimple, Check,
+  Users, ArrowBendUpLeft, Crown, PencilSimple, Check, Copy,
 } from '@phosphor-icons/react'
 import { supabase } from '../lib/supabase.js'
 import { useModalClose } from '../hooks/useModalClose.js'
@@ -130,6 +130,8 @@ export default function ChatView({ conversation, session, displayName, groupId, 
   const typingTimeoutRef   = useRef(null)
   const lastTapRef         = useRef(null)
   const preserveScrollRef  = useRef(null)
+  const longPressTimerRef  = useRef(null)
+  const longPressTouchPos  = useRef({ x: 0, y: 0 })
 
   const myId = session.user.id
   const convId = conversation.id
@@ -410,14 +412,18 @@ export default function ChatView({ conversation, session, displayName, groupId, 
 
   async function deleteMessage(msgId) {
     setActiveMsg(null); setMenuPos(null); setConfirmDeleteMsg(false)
+    const original = messages.find(m => m.id === msgId)
     setMessages(prev => prev.filter(m => m.id !== msgId))
-    await supabase.from('messages').delete().eq('id', msgId)
+    const { error } = await supabase.from('messages').delete().eq('id', msgId)
+    if (error) {
+      if (original) setMessages(prev => [...prev, original].sort((a, b) => new Date(a.created_at) - new Date(b.created_at)))
+      toast('Failed to delete message', 'error')
+    }
   }
 
   // ── Action menu ───────────────────────────────────────────────────────────
-  function openMenu(e, msgId, isOwn) {
-    e.preventDefault?.()
-    const rect = e.currentTarget.getBoundingClientRect()
+  function openMenuFromEl(el, msgId, isOwn) {
+    const rect = el.getBoundingClientRect()
     setMenuPos({
       bottom: Math.min(window.innerHeight - rect.top + 8, window.innerHeight - 72),
       ...(isOwn
@@ -428,6 +434,32 @@ export default function ChatView({ conversation, session, displayName, groupId, 
     setShowMoreEmojis(false)
   }
 
+  function openMenu(e, msgId, isOwn) {
+    e.preventDefault?.()
+    openMenuFromEl(e.currentTarget, msgId, isOwn)
+  }
+
+  function handleMsgTouchStart(e, msgId, isOwn) {
+    if (e.target.closest('button, a')) return
+    const el = e.currentTarget
+    longPressTouchPos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }
+    longPressTimerRef.current = setTimeout(() => {
+      window.getSelection()?.removeAllRanges()
+      haptic()
+      openMenuFromEl(el, msgId, isOwn)
+    }, 500)
+  }
+
+  function handleMsgTouchMove(e) {
+    const dx = Math.abs(e.touches[0].clientX - longPressTouchPos.current.x)
+    const dy = Math.abs(e.touches[0].clientY - longPressTouchPos.current.y)
+    if (dx > 8 || dy > 8) clearTimeout(longPressTimerRef.current)
+  }
+
+  function handleMsgTouchEnd() {
+    clearTimeout(longPressTimerRef.current)
+  }
+
   function handleDoubleTap(e, msgId, isOwn) {
     if (e.target.closest('button, a')) return
     const now = Date.now()
@@ -435,7 +467,7 @@ export default function ChatView({ conversation, session, displayName, groupId, 
     if (last && last.msgId === msgId && now - last.time < 300) {
       lastTapRef.current = null
       if (isOwn) startEdit(msgId)
-      else openMenu(e, msgId, isOwn)
+      else openMenuFromEl(e.currentTarget, msgId, isOwn)
     } else {
       lastTapRef.current = { time: now, msgId }
     }
@@ -630,8 +662,11 @@ export default function ChatView({ conversation, session, displayName, groupId, 
                   id={`msg-${msg.id}`}
                   key={msg.id}
                   className={`flex gap-2 ${isOwn ? 'justify-end' : 'justify-start'} ${isLastInGroup && !hasReactions ? 'mb-2' : 'mb-0'}`}
-                  onContextMenu={e => openMenu(e, msg.id, isOwn)}
+                  onContextMenu={e => { e.preventDefault(); openMenu(e, msg.id, isOwn) }}
                   onClick={e => handleDoubleTap(e, msg.id, isOwn)}
+                  onTouchStart={e => handleMsgTouchStart(e, msg.id, isOwn)}
+                  onTouchMove={handleMsgTouchMove}
+                  onTouchEnd={handleMsgTouchEnd}
                 >
                   {!isOwn && (
                     <div className="w-8 shrink-0 self-start mt-1">
@@ -643,7 +678,7 @@ export default function ChatView({ conversation, session, displayName, groupId, 
                     {!isOwn && isFirstInGroup && (
                       <p className="text-xs font-semibold text-stone-500 mb-1 ml-1">{msg.display_name}</p>
                     )}
-                    <div className={`overflow-hidden ${
+                    <div className={`overflow-hidden select-none ${
                       isOwn
                         ? `${editingMsgId === msg.id ? 'bg-stone-600' : 'bg-jade'} text-white ${isFirstInGroup ? 'rounded-t-2xl' : 'rounded-t-md'} ${isLastInGroup ? 'rounded-bl-2xl rounded-br-sm' : 'rounded-b-md'}`
                         : `bg-white border border-stone-200 text-stone-800 ${isFirstInGroup ? 'rounded-t-2xl' : 'rounded-t-md'} ${isLastInGroup ? 'rounded-br-2xl rounded-bl-sm' : 'rounded-b-md'}`
@@ -839,6 +874,18 @@ export default function ChatView({ conversation, session, displayName, groupId, 
               {showMoreEmojis ? '×' : '+'}
             </button>
             <div className="w-px h-6 bg-stone-100 mx-0.5" />
+            {activeMessage?.body && (
+              <button
+                onClick={() => {
+                  navigator.clipboard?.writeText(activeMessage.body)
+                  setActiveMsg(null); setMenuPos(null)
+                  toast('Copied', 'success')
+                }}
+                className="w-9 h-9 rounded-xl hover:bg-stone-100 flex items-center justify-center text-stone-400 hover:text-stone-600 transition-colors"
+              >
+                <Copy size={14} weight="bold" />
+              </button>
+            )}
             <button
               onClick={() => handleReply(activeMsg)}
               className="w-9 h-9 rounded-xl hover:bg-stone-100 flex items-center justify-center text-stone-500 hover:text-stone-700 transition-colors"
