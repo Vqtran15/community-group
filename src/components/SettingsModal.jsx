@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { GearSix, SignOut, Trash, Crown, X, Bell, BellSlash, PencilSimple, Lock, Eye, EyeSlash } from '@phosphor-icons/react'
+import { GearSix, SignOut, Trash, Crown, X, Bell, BellSlash, PencilSimple, Lock, Eye, EyeSlash, EnvelopeSimple, UserMinus } from '@phosphor-icons/react'
 import { useModalClose } from '../hooks/useModalClose.js'
 import { supabase } from '../lib/supabase.js'
 import { useToast } from '../lib/toast.jsx'
@@ -23,7 +23,7 @@ function AvatarCircle({ icon, name, userId, size = 'md' }) {
   )
 }
 
-export default function SettingsModal({ groupName, displayName, groupId, isAdmin, userId, onClose, pushSupported, pushSubscribed, pushPermission, pushToggling, onPushToggle }) {
+export default function SettingsModal({ groupName, displayName, groupId, isAdmin, userId, onClose, onDisplayNameChange, pushSupported, pushSubscribed, pushPermission, pushToggling, onPushToggle }) {
   const [closing, close] = useModalClose(onClose)
   const toast = useToast()
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -38,6 +38,10 @@ export default function SettingsModal({ groupName, displayName, groupId, isAdmin
   const [avatarIcon, setAvatarIcon] = useState(null)
   const [avatarPickerOpen, setAvatarPickerOpen] = useState(false)
   const [savingAvatar, setSavingAvatar] = useState(false)
+  const [email, setEmail] = useState('')
+  const [nameOpen, setNameOpen] = useState(false)
+  const [nameValue, setNameValue] = useState('')
+  const [nameSaving, setNameSaving] = useState(false)
   const [pwOpen, setPwOpen] = useState(false)
   const [currentPw, setCurrentPw] = useState('')
   const [newPw, setNewPw] = useState('')
@@ -46,6 +50,9 @@ export default function SettingsModal({ groupName, displayName, groupId, isAdmin
   const [showNewPw, setShowNewPw] = useState(false)
   const [pwSaving, setPwSaving] = useState(false)
   const [pwError, setPwError] = useState(null)
+  const [leaveConfirm, setLeaveConfirm] = useState(false)
+  const [leaving, setLeaving] = useState(false)
+  const [leaveError, setLeaveError] = useState(null)
 
   useEffect(() => {
     if (!userId) return
@@ -55,6 +62,7 @@ export default function SettingsModal({ groupName, displayName, groupId, isAdmin
       .eq('user_id', userId)
       .single()
       .then(({ data }) => setAvatarIcon(data?.avatar_icon ?? null))
+    supabase.auth.getUser().then(({ data: { user } }) => setEmail(user?.email ?? ''))
   }, [userId])
 
   useEffect(() => {
@@ -93,6 +101,37 @@ export default function SettingsModal({ groupName, displayName, groupId, isAdmin
       setAvatarPickerOpen(false)
     }
     setSavingAvatar(false)
+  }
+
+  async function handleChangeName(e) {
+    e.preventDefault()
+    const trimmed = nameValue.trim()
+    if (!trimmed) return
+    setNameSaving(true)
+    const { error } = await supabase
+      .from('profiles')
+      .update({ display_name: trimmed })
+      .eq('user_id', userId)
+    if (error) {
+      toast('Failed to update name', 'error')
+    } else {
+      onDisplayNameChange?.(trimmed)
+      toast('Name updated', 'success')
+      setNameOpen(false)
+    }
+    setNameSaving(false)
+  }
+
+  async function handleLeaveGroup() {
+    setLeaving(true)
+    setLeaveError(null)
+    const { error } = await supabase.rpc('leave_group')
+    if (error) {
+      setLeaveError(error.message)
+      setLeaving(false)
+      return
+    }
+    await supabase.auth.signOut()
   }
 
   async function handleChangePassword(e) {
@@ -307,7 +346,12 @@ export default function SettingsModal({ groupName, displayName, groupId, isAdmin
               </div>
               <div className="flex-1 min-w-0">
                 {displayName && <p className="text-sm font-medium text-stone-700 truncate">{displayName}</p>}
-                {groupName && <p className="text-xs text-stone-400 truncate">{groupName}</p>}
+                {email && (
+                  <div className="flex items-center gap-1 mt-0.5">
+                    <EnvelopeSimple size={11} className="text-stone-400 shrink-0" />
+                    <p className="text-xs text-stone-400 truncate">{email}</p>
+                  </div>
+                )}
                 <button
                   onClick={() => setAvatarPickerOpen(o => !o)}
                   className="text-xs text-jade font-medium mt-0.5"
@@ -348,6 +392,47 @@ export default function SettingsModal({ groupName, displayName, groupId, isAdmin
                   ))}
                 </div>
               </div>
+            )}
+
+            {/* Change display name */}
+            {nameOpen ? (
+              <form onSubmit={handleChangeName} className="mb-3 p-4 bg-stone-50 rounded-2xl border border-stone-100 space-y-3">
+                <p className="text-xs font-semibold text-stone-500">Display Name</p>
+                <input
+                  autoFocus
+                  type="text"
+                  placeholder="Your name"
+                  value={nameValue}
+                  onChange={e => setNameValue(e.target.value)}
+                  maxLength={40}
+                  required
+                  className="w-full text-sm bg-white border border-stone-200 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-jade placeholder:text-stone-300"
+                />
+                <div className="flex gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setNameOpen(false)}
+                    className="flex-1 py-2 text-sm font-medium text-stone-600 bg-white border border-stone-200 rounded-xl hover:bg-stone-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={nameSaving || !nameValue.trim()}
+                    className="flex-1 py-2 text-sm font-medium text-white bg-jade rounded-xl hover:bg-jade-700 transition-colors disabled:opacity-40"
+                  >
+                    {nameSaving ? 'Saving…' : 'Save'}
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <button
+                onClick={() => { setNameValue(displayName); setNameOpen(true) }}
+                className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-stone-600 hover:text-stone-800 hover:bg-stone-50 rounded-xl transition-colors mb-1"
+              >
+                <PencilSimple size={15} weight="bold" className="text-stone-400" />
+                Change display name
+              </button>
             )}
 
             {/* Change password */}
@@ -428,6 +513,42 @@ export default function SettingsModal({ groupName, displayName, groupId, isAdmin
               >
                 <Lock size={15} weight="bold" className="text-stone-400" />
                 Change password
+              </button>
+            )}
+
+            {/* Leave group */}
+            {leaveConfirm ? (
+              <div className="p-4 bg-stone-50 border border-stone-200 rounded-xl space-y-3 mb-1">
+                <p className="text-sm font-semibold text-stone-700">Leave this group?</p>
+                <p className="text-xs text-stone-500">
+                  You'll lose access to all group content. Your account stays active — you'd need a new invite to rejoin.
+                </p>
+                {leaveError && (
+                  <p className="text-xs text-red-600 bg-red-50 rounded-lg px-3 py-2">{leaveError}</p>
+                )}
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => { setLeaveConfirm(false); setLeaveError(null) }}
+                    className="flex-1 py-2 text-sm font-medium text-stone-600 bg-white border border-stone-200 rounded-lg hover:bg-stone-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleLeaveGroup}
+                    disabled={leaving}
+                    className="flex-1 py-2 text-sm font-medium text-white bg-stone-700 hover:bg-stone-800 rounded-lg transition-colors disabled:opacity-50"
+                  >
+                    {leaving ? 'Leaving…' : 'Leave'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={() => setLeaveConfirm(true)}
+                className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-stone-400 hover:text-stone-600 hover:bg-stone-50 rounded-xl transition-colors mb-1"
+              >
+                <UserMinus size={15} weight="bold" />
+                Leave group
               </button>
             )}
 

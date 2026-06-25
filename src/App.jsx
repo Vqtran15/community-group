@@ -264,6 +264,7 @@ export default function App() {
           isAdmin={isAdmin}
           userId={session.user.id}
           onClose={() => setSettingsOpen(false)}
+          onDisplayNameChange={name => setProfile(p => ({ ...p, display_name: name }))}
           pushSupported={push.supported}
           pushSubscribed={push.subscribed}
           pushPermission={push.permission}
