@@ -168,7 +168,7 @@ export default function App() {
 
   useEffect(() => {
     if (location.pathname === '/chat') setUnreadChatCount(0)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    window.scrollTo({ top: 0, behavior: 'instant' })
   }, [location.pathname])
 
   if (authLoading) {

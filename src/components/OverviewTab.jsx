@@ -247,7 +247,7 @@ export default function OverviewTab({ displayName, groupName, groupId, isAdmin, 
         </div>
       )}
 
-      <div className="mb-7 animate-fade-up flex items-center justify-between gap-4" style={{ animationDelay: '0ms' }}>
+      <div className="mb-7 flex items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-stone-800">Our Community</h1>
         </div>
@@ -270,7 +270,7 @@ export default function OverviewTab({ displayName, groupName, groupId, isAdmin, 
           announcement ? (
             <div
               className="w-full bg-jade rounded-2xl p-4 animate-stack-in shadow-md shadow-jade/25"
-              style={{ animationDelay: '70ms' }}
+              style={{ animationDelay: '180ms' }}
             >
               <div className="flex items-start gap-3">
                 <Megaphone size={26} weight="fill" className="text-white/70 shrink-0 mt-0.5" />
@@ -292,7 +292,7 @@ export default function OverviewTab({ displayName, groupName, groupId, isAdmin, 
             <button
               onClick={() => setEditingAnnouncement(true)}
               className="w-full bg-jade/8 border border-dashed border-jade/30 rounded-2xl p-4 animate-stack-in text-left"
-              style={{ animationDelay: '70ms' }}
+              style={{ animationDelay: '180ms' }}
             >
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-jade/10 flex items-center justify-center shrink-0">
@@ -308,7 +308,7 @@ export default function OverviewTab({ displayName, groupName, groupId, isAdmin, 
         )}
 
         {nextMeal === undefined
-          ? <CardSkeleton delay={showAnnouncement ? 140 : 70} />
+          ? <CardSkeleton delay={showAnnouncement ? 240 : 180} />
           : <Card
               onClick={() => navigate('/schedule')}
               icon={<ForkKnife size={24} weight="fill" className="text-jade" />}
@@ -316,11 +316,11 @@ export default function OverviewTab({ displayName, groupName, groupId, isAdmin, 
               label="Next Meal"
               primary={nextMeal?.is_paused ? 'No meal signup this week' : nextMeal?.title ?? 'No upcoming meals'}
               secondary={nextMeal?.week_date && !nextMeal?.is_paused ? shortDate(nextMeal.week_date) : null}
-              delay={showAnnouncement ? 140 : 70}
+              delay={showAnnouncement ? 240 : 180}
             />
         }
         {nextService === undefined
-          ? <CardSkeleton delay={showAnnouncement ? 210 : 140} />
+          ? <CardSkeleton delay={showAnnouncement ? 300 : 240} />
           : <Card
               onClick={() => navigate('/schedule', { state: { segment: 'services' } })}
               icon={<HandHeart size={24} weight="fill" className="text-coral" />}
@@ -328,7 +328,7 @@ export default function OverviewTab({ displayName, groupName, groupId, isAdmin, 
               label="Next Service"
               primary={nextService?.is_paused ? 'No service signup this week' : nextService?.title ?? 'No upcoming services'}
               secondary={nextService?.week_date && !nextService?.is_paused ? shortDate(nextService.week_date) : null}
-              delay={showAnnouncement ? 210 : 140}
+              delay={showAnnouncement ? 300 : 240}
             />
         }
         <Card
@@ -337,8 +337,8 @@ export default function OverviewTab({ displayName, groupName, groupId, isAdmin, 
           iconBg="bg-lagoon-50"
           label="Upcoming Birthdays"
           primary={birthdayPrimary()}
-          delay={showAnnouncement ? 280 : 210}
-          confetti={!!nextBirthday && nextBirthday.days <= 30}
+          delay={showAnnouncement ? 360 : 300}
+          confetti={!!nextBirthday && nextBirthday.days <= 14}
         />
         <Card
           onClick={onOpenGuide}
@@ -347,14 +347,14 @@ export default function OverviewTab({ displayName, groupName, groupId, isAdmin, 
           label="Guide"
           primary="Community Guide"
           secondary="Tap to open"
-          delay={showAnnouncement ? 350 : 280}
+          delay={showAnnouncement ? 420 : 360}
         />
 
         {/* Fun Fact */}
         {funFact !== null && (
           <div
             className="w-full bg-amber-50 border border-amber-100 rounded-2xl p-4 animate-stack-in"
-            style={{ animationDelay: `${showAnnouncement ? 420 : 350}ms` }}
+            style={{ animationDelay: `${showAnnouncement ? 480 : 420}ms` }}
           >
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center shrink-0 mt-0.5">
