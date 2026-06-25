@@ -113,10 +113,14 @@ export default function ChatView({ conversation, session, displayName, groupId, 
   const [replyingTo, setReplyingTo]         = useState(null)
   const [infoOpen, setInfoOpen]             = useState(false)
   const [infoClosing, closeInfo]            = useModalClose(() => setInfoOpen(false))
+  const [menuClosing, closeMenu, resetMenuClosing] = useModalClose(() => {
+    setActiveMsg(null); setMenuPos(null); setShowMoreEmojis(false); setConfirmDeleteMsg(false)
+  }, 150)
   const [renamingGroup, setRenamingGroup]   = useState(false)
   const [confirmDeleteMsg, setConfirmDeleteMsg] = useState(false)
   const [editingMsgId, setEditingMsgId]         = useState(null)
   const [editText, setEditText]                 = useState('')
+  const [editClosingId, setEditClosingId]       = useState(null)
   const [selectedMsgId, setSelectedMsgId]       = useState(null)
   const [confirmDeleteId, setConfirmDeleteId]   = useState(null)
   const toast = useToast()
@@ -404,7 +408,7 @@ export default function ChatView({ conversation, session, displayName, groupId, 
   // ── Reactions ─────────────────────────────────────────────────────────────
   async function toggleReaction(messageId, emoji) {
     const existing = reactions[messageId]?.[emoji]?.find(r => r.user_id === myId)
-    setActiveMsg(null); setMenuPos(null)
+    closeMenu()
     if (existing) {
       await supabase.from('reactions').delete().eq('id', existing.id)
     } else {
@@ -418,7 +422,7 @@ export default function ChatView({ conversation, session, displayName, groupId, 
   }
 
   async function deleteMessage(msgId) {
-    setActiveMsg(null); setMenuPos(null); setConfirmDeleteMsg(false)
+    setConfirmDeleteMsg(false); closeMenu()
     const original = messages.find(m => m.id === msgId)
     setMessages(prev => prev.filter(m => m.id !== msgId))
     const { error } = await supabase.from('messages').delete().eq('id', msgId)
@@ -430,6 +434,7 @@ export default function ChatView({ conversation, session, displayName, groupId, 
 
   // ── Action menu ───────────────────────────────────────────────────────────
   function openMenuFromEl(el, msgId, isOwn) {
+    resetMenuClosing()
     const rect = el.getBoundingClientRect()
     setMenuPos({
       bottom: Math.min(window.innerHeight - rect.top + 8, window.innerHeight - 72),
@@ -437,6 +442,14 @@ export default function ChatView({ conversation, session, displayName, groupId, 
     })
     setActiveMsg(msgId)
     setShowMoreEmojis(false)
+  }
+
+  function exitEdit() {
+    const id = editingMsgId
+    if (!id) return
+    setEditingMsgId(null)
+    setEditClosingId(id)
+    setTimeout(() => setEditClosingId(prev => prev === id ? null : prev), 280)
   }
 
   function openMenu(e, msgId, isOwn) {
@@ -468,7 +481,7 @@ export default function ChatView({ conversation, session, displayName, groupId, 
     if (!msg?.body) return
     setEditingMsgId(msgId)
     setEditText(msg.body)
-    setActiveMsg(null); setMenuPos(null); setShowMoreEmojis(false); setConfirmDeleteMsg(false)
+    closeMenu()
     setTimeout(() => {
       const el = editTextareaRef.current
       if (!el) return
@@ -481,9 +494,9 @@ export default function ChatView({ conversation, session, displayName, groupId, 
   async function handleSaveEdit(e) {
     e?.preventDefault()
     const original = messages.find(m => m.id === editingMsgId)?.body
-    if (!editText.trim() || editText.trim() === original) { setEditingMsgId(null); return }
+    if (!editText.trim() || editText.trim() === original) { exitEdit(); return }
     const id = editingMsgId
-    setEditingMsgId(null)
+    exitEdit()
     const { error } = await supabase.from('messages').update({ body: editText.trim() }).eq('id', id)
     if (!error) setMessages(prev => prev.map(m => m.id === id ? { ...m, body: editText.trim() } : m))
     else toast('Failed to edit message', 'error')
@@ -495,7 +508,7 @@ export default function ChatView({ conversation, session, displayName, groupId, 
       setReplyingTo(msg)
       setTimeout(() => textareaRef.current?.focus(), 50)
     }
-    setActiveMsg(null); setMenuPos(null); setShowMoreEmojis(false); setConfirmDeleteMsg(false)
+    closeMenu()
   }
 
   function scrollToMessage(msgId) {
@@ -700,11 +713,12 @@ export default function ChatView({ conversation, session, displayName, groupId, 
                     {!isOwn && isFirstInGroup && (
                       <p className="text-xs font-semibold text-stone-500 mb-1 ml-1">{msg.display_name}</p>
                     )}
-                    <div className={`overflow-hidden select-none ${editingMsgId === msg.id ? 'animate-edit-pop' : ''} ${
-                      isOwn
+                    <div className={`overflow-hidden select-none transition-colors duration-200
+                      ${editingMsgId === msg.id ? 'animate-edit-pop' : editClosingId === msg.id ? 'animate-edit-close' : ''}
+                      ${isOwn
                         ? `${editingMsgId === msg.id ? 'bg-stone-600' : 'bg-jade'} text-white ${isFirstInGroup ? 'rounded-t-2xl' : 'rounded-t-md'} ${isLastInGroup ? 'rounded-bl-2xl rounded-br-sm' : 'rounded-b-md'}`
                         : `bg-white border border-stone-200 text-stone-800 ${isFirstInGroup ? 'rounded-t-2xl' : 'rounded-t-md'} ${isLastInGroup ? 'rounded-br-2xl rounded-bl-sm' : 'rounded-b-md'}`
-                    }`}>
+                      }`}>
                       {/* Reply quote */}
                       {msg.reply_message && (
                         <button
@@ -738,14 +752,14 @@ export default function ChatView({ conversation, session, displayName, groupId, 
                             }}
                             onKeyDown={e => {
                               if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSaveEdit(e) }
-                              if (e.key === 'Escape') setEditingMsgId(null)
+                              if (e.key === 'Escape') exitEdit()
                             }}
                             rows={1}
                             className="w-full text-sm bg-transparent border-0 outline-none text-white resize-none placeholder:text-white/50"
                             style={{ minWidth: 140 }}
                           />
                           <div className="flex gap-3 mt-1.5">
-                            <button type="button" onClick={() => setEditingMsgId(null)} className="text-[11px] text-white/60 hover:text-white font-medium transition-colors">
+                            <button type="button" onClick={exitEdit} className="text-[11px] text-white/60 hover:text-white font-medium transition-colors">
                               Cancel
                             </button>
                             <button type="submit" disabled={!editText.trim()} className="text-[11px] text-white font-semibold disabled:opacity-40 transition-opacity">
@@ -754,7 +768,7 @@ export default function ChatView({ conversation, session, displayName, groupId, 
                           </div>
                         </form>
                       ) : msg.body && (
-                        <p className="px-3 py-2 text-sm leading-relaxed whitespace-pre-wrap break-words">
+                        <p className={`px-3 py-2 text-sm leading-relaxed whitespace-pre-wrap break-words ${editClosingId === msg.id ? 'animate-overlay-in' : ''}`}>
                           {searchQuery.trim() ? highlightText(msg.body, searchQuery) : msg.body}
                         </p>
                       )}
@@ -873,9 +887,10 @@ export default function ChatView({ conversation, session, displayName, groupId, 
       {/* Action menu */}
       {activeMsg && menuPos && (
         <div
-          className="fixed z-30 bg-white rounded-2xl shadow-xl border border-stone-100 p-1.5"
+          className="fixed z-30"
           style={{ bottom: menuPos.bottom, ...('right' in menuPos ? { right: menuPos.right } : { left: '50%', transform: 'translateX(-50%)' }) }}
         >
+        <div className={`bg-white rounded-2xl shadow-xl border border-stone-100 p-1.5 ${menuClosing ? 'animate-popup-out' : 'animate-popup-in'}`}>
           <div className="flex items-center gap-0.5">
             {EMOJIS.map(emoji => {
               const reacted = reactions[activeMsg]?.[emoji]?.some(r => r.user_id === myId)
@@ -900,7 +915,7 @@ export default function ChatView({ conversation, session, displayName, groupId, 
               <button
                 onClick={() => {
                   navigator.clipboard?.writeText(activeMessage.body)
-                  setActiveMsg(null); setMenuPos(null)
+                  closeMenu()
                   toast('Copied', 'success')
                 }}
                 className="w-9 h-9 rounded-xl hover:bg-stone-100 flex items-center justify-center text-stone-400 hover:text-stone-600 transition-colors"
@@ -968,10 +983,11 @@ export default function ChatView({ conversation, session, displayName, groupId, 
             </div>
           )}
         </div>
+        </div>
       )}
 
       {activeMsg && (
-        <div className="fixed inset-0 z-20" onClick={() => { setActiveMsg(null); setMenuPos(null); setShowMoreEmojis(false) }} />
+        <div className="fixed inset-0 z-20" onClick={closeMenu} />
       )}
 
       {/* Conversation info panel */}
