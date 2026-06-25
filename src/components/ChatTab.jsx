@@ -33,6 +33,13 @@ export default function ChatTab({ session, displayName, groupId, isAdmin, onRead
       .then(({ data }) => setMembers(data ?? []))
   }, [groupId])
 
+  useEffect(() => {
+    if (!displayName || !session.user.id) return
+    setMembers(prev => prev.map(m =>
+      m.user_id === session.user.id ? { ...m, display_name: displayName } : m
+    ))
+  }, [displayName])
+
   function openConv(conv) {
     setListClass('')
     setActiveConv(conv)

@@ -300,6 +300,13 @@ export default function ChatView({ conversation, session, displayName, groupId, 
   }, [imagePreview])
 
   useEffect(() => {
+    if (!displayName || !myId) return
+    setMessages(prev => prev.map(m =>
+      m.user_id === myId ? { ...m, display_name: displayName } : m
+    ))
+  }, [displayName])
+
+  useEffect(() => {
     if (!selectedMsgId && !confirmDeleteId) return
     function clear() { setSelectedMsgId(null); setConfirmDeleteId(null) }
     document.addEventListener('click', clear)
