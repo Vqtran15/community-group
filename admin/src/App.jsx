@@ -19,10 +19,10 @@ function PasswordGate({ onUnlock }) {
   }
 
   return (
-    <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-sunrise-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-8">
-        <h1 className="text-xl font-bold text-slate-800 mb-1">Community Admin</h1>
-        <p className="text-sm text-slate-400 mb-6">Enter password to continue</p>
+        <h1 className="text-xl font-bold text-stone-800 mb-1">Community Admin</h1>
+        <p className="text-sm text-stone-400 mb-6">Enter password to continue</p>
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
             autoFocus
@@ -30,12 +30,12 @@ function PasswordGate({ onUnlock }) {
             value={value}
             onChange={e => { setValue(e.target.value); setError(false) }}
             placeholder="Password"
-            className={`w-full border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400 ${error ? 'border-red-400 bg-red-50' : 'border-slate-200'}`}
+            className={`w-full border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-jade ${error ? 'border-red-400 bg-red-50' : 'border-stone-200'}`}
           />
           {error && <p className="text-xs text-red-500">Incorrect password</p>}
           <button
             type="submit"
-            className="w-full bg-slate-900 text-white rounded-xl py-2.5 text-sm font-medium hover:bg-slate-700 transition-colors"
+            className="w-full bg-jade text-white rounded-xl py-2.5 text-sm font-medium hover:bg-jade-700 transition-colors"
           >
             Unlock
           </button>
@@ -295,15 +295,15 @@ function AdminApp() {
     return (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
         <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6">
-          <h3 className="text-lg font-bold text-slate-800 mb-2">
+          <h3 className="text-lg font-bold text-stone-800 mb-2">
             {isReset ? 'Send password reset?' : isGroup ? 'Delete community group?' : 'Delete user account?'}
           </h3>
-          <p className="text-sm text-slate-500 mb-6">
+          <p className="text-sm text-stone-500 mb-6">
             {isReset ? (
-              <>A password reset email will be sent to <span className="font-semibold text-slate-700">{confirm.target.email}</span>.</>
+              <>A password reset email will be sent to <span className="font-semibold text-stone-700">{confirm.target.email}</span>.</>
             ) : (
               <>
-                <span className="font-semibold text-slate-700">{confirm.label}</span>
+                <span className="font-semibold text-stone-700">{confirm.label}</span>
                 {isGroup
                   ? ' and all its members, messages, and data will be permanently deleted.'
                   : "'s account, profile, and messages will be permanently deleted."}
@@ -315,7 +315,7 @@ function AdminApp() {
             <button
               onClick={() => setConfirm(null)}
               disabled={busy}
-              className="flex-1 px-4 py-2 rounded-xl border border-slate-200 text-slate-600 text-sm font-medium hover:bg-slate-50 transition-colors disabled:opacity-50"
+              className="flex-1 px-4 py-2 rounded-xl border border-stone-200 text-stone-600 text-sm font-medium hover:bg-stone-50 transition-colors disabled:opacity-50"
             >
               Cancel
             </button>
@@ -327,7 +327,7 @@ function AdminApp() {
               }}
               disabled={busy}
               className={`flex-1 px-4 py-2 rounded-xl text-white text-sm font-medium transition-colors disabled:opacity-50 ${
-                isReset ? 'bg-sky-500 hover:bg-sky-600' : 'bg-red-500 hover:bg-red-600'
+                isReset ? 'bg-lagoon hover:bg-lagoon-600' : 'bg-red-500 hover:bg-red-600'
               }`}
             >
               {isReset ? 'Send reset email' : busy ? 'Deleting…' : 'Delete forever'}
@@ -342,30 +342,30 @@ function AdminApp() {
 
   // ── Render ───────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-slate-100 flex flex-col">
+    <div className="min-h-screen bg-sunrise-50 flex flex-col">
       {/* Toast */}
       {toast && (
         <div className={`fixed top-4 right-4 z-[60] px-4 py-3 rounded-xl shadow-lg text-sm font-medium animate-fade-in ${
-          toast.type === 'error' ? 'bg-red-500 text-white' : 'bg-emerald-600 text-white'
+          toast.type === 'error' ? 'bg-red-500 text-white' : 'bg-jade text-white'
         }`}>
           {toast.msg}
         </div>
       )}
 
       {/* Header */}
-      <header className="bg-slate-900 text-white px-6 py-4 flex items-center justify-between shrink-0">
+      <header className="bg-stone-900 text-white px-6 py-4 flex items-center justify-between shrink-0">
         <div>
           <h1 className="text-lg font-bold tracking-tight">Community Admin</h1>
-          <p className="text-xs text-slate-400 mt-0.5">Master view — all groups and members</p>
+          <p className="text-xs text-stone-400 mt-0.5">Master view — all groups and members</p>
         </div>
         <div className="flex items-center gap-5">
           {!loadingGroups && (
-            <div className="flex items-center gap-4 text-xs text-slate-400">
+            <div className="flex items-center gap-4 text-xs text-stone-400">
               <span><span className="text-white font-semibold">{groups.length}</span> groups</span>
               <span><span className="text-white font-semibold">{totalUsers}</span> total users</span>
             </div>
           )}
-          <span className="text-xs bg-slate-700 text-slate-300 px-2.5 py-1 rounded-full font-mono">
+          <span className="text-xs bg-stone-700 text-stone-300 px-2.5 py-1 rounded-full font-mono">
             service role
           </span>
         </div>
@@ -380,38 +380,38 @@ function AdminApp() {
 
       <div className="flex flex-1 overflow-hidden">
         {/* Groups sidebar */}
-        <aside className="w-72 bg-white border-r border-slate-200 flex flex-col shrink-0">
-          <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+        <aside className="w-72 bg-white border-r border-stone-200 flex flex-col shrink-0">
+          <div className="px-4 py-3 border-b border-stone-100 flex items-center justify-between">
+            <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider">
               Groups {!loadingGroups && `(${groups.length})`}
             </span>
             <button
               onClick={loadGroups}
-              className="text-xs text-slate-400 hover:text-slate-600 transition-colors"
+              className="text-xs text-stone-400 hover:text-stone-600 transition-colors"
             >
               Refresh
             </button>
           </div>
 
-          <div className="px-3 py-2 border-b border-slate-100">
+          <div className="px-3 py-2 border-b border-stone-100">
             <input
               type="search"
               value={groupSearch}
               onChange={e => setGroupSearch(e.target.value)}
               placeholder="Search groups…"
-              className="w-full text-sm px-3 py-1.5 rounded-lg border border-slate-200 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-400"
+              className="w-full text-sm px-3 py-1.5 rounded-lg border border-stone-200 bg-stone-50 focus:outline-none focus:ring-2 focus:ring-jade"
             />
           </div>
 
           <div className="flex-1 overflow-y-auto">
             {loadingGroups ? (
               <div className="flex items-center justify-center py-16">
-                <p className="text-sm text-slate-400 animate-pulse">Loading…</p>
+                <p className="text-sm text-stone-400 animate-pulse">Loading…</p>
               </div>
             ) : filteredGroups.length === 0 ? (
-              <p className="text-sm text-slate-400 text-center py-16">No groups found</p>
+              <p className="text-sm text-stone-400 text-center py-16">No groups found</p>
             ) : (
-              <ul className="divide-y divide-slate-50">
+              <ul className="divide-y divide-stone-50">
                 {filteredGroups.map(group => {
                   const count = memberCount(group)
                   const isEmpty = count === 0
@@ -419,21 +419,21 @@ function AdminApp() {
                     <li key={group.id}>
                       <button
                         onClick={() => selectGroup(group)}
-                        className={`w-full text-left px-4 py-3.5 hover:bg-slate-50 transition-colors ${selectedGroup?.id === group.id ? 'bg-slate-50 border-l-2 border-slate-800' : ''}`}
+                        className={`w-full text-left px-4 py-3.5 hover:bg-stone-50 transition-colors ${selectedGroup?.id === group.id ? 'bg-stone-50 border-l-2 border-jade' : ''}`}
                       >
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
                             <div className="flex items-center gap-1.5 mb-0.5">
-                              <p className={`text-sm font-semibold truncate ${isEmpty ? 'text-slate-400' : 'text-slate-800'}`}>
+                              <p className={`text-sm font-semibold truncate ${isEmpty ? 'text-stone-400' : 'text-stone-800'}`}>
                                 {group.name}
                               </p>
                               {isEmpty && (
-                                <span className="shrink-0 text-[9px] font-bold uppercase tracking-wider bg-slate-100 text-slate-400 px-1.5 py-0.5 rounded-full">
+                                <span className="shrink-0 text-[9px] font-bold uppercase tracking-wider bg-stone-100 text-stone-400 px-1.5 py-0.5 rounded-full">
                                   Empty
                                 </span>
                               )}
                             </div>
-                            <p className="text-xs text-slate-400">
+                            <p className="text-xs text-stone-400">
                               {count} {count === 1 ? 'member' : 'members'} · {formatDate(group.created_at)}
                             </p>
                           </div>
@@ -459,7 +459,7 @@ function AdminApp() {
         {/* Members panel */}
         <main className="flex-1 overflow-y-auto">
           {!selectedGroup ? (
-            <div className="flex items-center justify-center h-full text-slate-400">
+            <div className="flex items-center justify-center h-full text-stone-400">
               <div className="text-center">
                 <p className="text-4xl mb-3">👈</p>
                 <p className="text-sm">Select a group to view members</p>
@@ -480,34 +480,34 @@ function AdminApp() {
                           if (e.key === 'Enter') saveGroupName(selectedGroup.id)
                           if (e.key === 'Escape') setRenamingGroupId(null)
                         }}
-                        className="text-xl font-bold text-slate-800 border border-slate-300 rounded-lg px-3 py-1 focus:outline-none focus:ring-2 focus:ring-slate-400"
+                        className="text-xl font-bold text-stone-800 border border-stone-300 rounded-lg px-3 py-1 focus:outline-none focus:ring-2 focus:ring-jade"
                       />
                       <button
                         onClick={() => saveGroupName(selectedGroup.id)}
                         disabled={renameSaving}
-                        className="text-xs text-emerald-600 hover:text-emerald-700 font-semibold disabled:opacity-50"
+                        className="text-xs text-jade hover:text-jade-700 font-semibold disabled:opacity-50"
                       >
                         {renameSaving ? 'Saving…' : 'Save'}
                       </button>
                       <button
                         onClick={() => setRenamingGroupId(null)}
-                        className="text-xs text-slate-400 hover:text-slate-600"
+                        className="text-xs text-stone-400 hover:text-stone-600"
                       >
                         Cancel
                       </button>
                     </div>
                   ) : (
                     <div className="flex items-center gap-2">
-                      <h2 className="text-xl font-bold text-slate-800">{selectedGroup.name}</h2>
+                      <h2 className="text-xl font-bold text-stone-800">{selectedGroup.name}</h2>
                       <button
                         onClick={() => { setRenamingGroupId(selectedGroup.id); setRenameValue(selectedGroup.name) }}
-                        className="text-xs text-slate-400 hover:text-slate-600 transition-colors font-medium"
+                        className="text-xs text-stone-400 hover:text-stone-600 transition-colors font-medium"
                       >
                         Rename
                       </button>
                     </div>
                   )}
-                  <p className="text-sm text-slate-400 mt-0.5">
+                  <p className="text-sm text-stone-400 mt-0.5">
                     {members.length} {members.length === 1 ? 'member' : 'members'}
                   </p>
                 </div>
@@ -517,43 +517,43 @@ function AdminApp() {
                   value={memberSearch}
                   onChange={e => setMemberSearch(e.target.value)}
                   placeholder="Search members…"
-                  className="shrink-0 w-56 text-sm px-3 py-2 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-slate-400"
+                  className="shrink-0 w-56 text-sm px-3 py-2 rounded-xl border border-stone-200 bg-white focus:outline-none focus:ring-2 focus:ring-jade"
                 />
               </div>
 
               {loadingMembers ? (
                 <div className="flex justify-center py-16">
-                  <p className="text-sm text-slate-400 animate-pulse">Loading members…</p>
+                  <p className="text-sm text-stone-400 animate-pulse">Loading members…</p>
                 </div>
               ) : members.length === 0 ? (
-                <div className="text-center py-16 text-slate-400">
+                <div className="text-center py-16 text-stone-400">
                   <p className="text-sm">No members in this group</p>
                 </div>
               ) : filteredMembers.length === 0 ? (
-                <div className="text-center py-16 text-slate-400">
+                <div className="text-center py-16 text-stone-400">
                   <p className="text-sm">No members match your search</p>
                 </div>
               ) : (
-                <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+                <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b border-slate-100 bg-slate-50">
-                        <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Member</th>
-                        <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Role</th>
-                        <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Email</th>
-                        <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Last Active</th>
-                        <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Last Logged In</th>
-                        <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Joined</th>
+                      <tr className="border-b border-stone-100 bg-stone-50">
+                        <th className="text-left px-5 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wider">Member</th>
+                        <th className="text-left px-5 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wider">Role</th>
+                        <th className="text-left px-5 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wider">Email</th>
+                        <th className="text-left px-5 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wider">Last Active</th>
+                        <th className="text-left px-5 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wider">Last Logged In</th>
+                        <th className="text-left px-5 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wider">Joined</th>
                         <th className="px-5 py-3" />
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-50">
+                    <tbody className="divide-y divide-stone-50">
                       {filteredMembers.map(member => (
-                        <tr key={member.user_id} className="hover:bg-slate-50 transition-colors">
+                        <tr key={member.user_id} className="hover:bg-stone-50 transition-colors">
                           {/* Name */}
                           <td className="px-5 py-4">
                             <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold text-slate-600 shrink-0">
+                              <div className="w-8 h-8 rounded-full bg-stone-200 flex items-center justify-center text-xs font-bold text-stone-600 shrink-0">
                                 {initials(member.display_name)}
                               </div>
                               {editingId === member.user_id ? (
@@ -566,28 +566,28 @@ function AdminApp() {
                                       if (e.key === 'Enter') saveDisplayName(member.user_id)
                                       if (e.key === 'Escape') setEditingId(null)
                                     }}
-                                    className="border border-slate-300 rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
+                                    className="border border-stone-300 rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-jade"
                                   />
                                   <button
                                     onClick={() => saveDisplayName(member.user_id)}
                                     disabled={saving}
-                                    className="text-xs text-emerald-600 hover:text-emerald-700 font-medium disabled:opacity-50"
+                                    className="text-xs text-jade hover:text-jade-700 font-medium disabled:opacity-50"
                                   >
                                     {saving ? 'Saving…' : 'Save'}
                                   </button>
                                   <button
                                     onClick={() => setEditingId(null)}
-                                    className="text-xs text-slate-400 hover:text-slate-600"
+                                    className="text-xs text-stone-400 hover:text-stone-600"
                                   >
                                     Cancel
                                   </button>
                                 </div>
                               ) : (
                                 <div className="flex items-center gap-2">
-                                  <span className="font-medium text-slate-800">{member.display_name}</span>
+                                  <span className="font-medium text-stone-800">{member.display_name}</span>
                                   <button
                                     onClick={() => { setEditingId(member.user_id); setEditName(member.display_name) }}
-                                    className="text-xs text-slate-400 hover:text-slate-600 transition-colors"
+                                    className="text-xs text-stone-400 hover:text-stone-600 transition-colors"
                                   >
                                     Edit
                                   </button>
@@ -605,7 +605,7 @@ function AdminApp() {
                               className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold transition-colors disabled:opacity-50 ${
                                 member.role === 'admin'
                                   ? 'bg-amber-100 text-amber-700 hover:bg-amber-200'
-                                  : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                                  : 'bg-stone-100 text-stone-500 hover:bg-stone-200'
                               }`}
                             >
                               {roleToggleBusy === member.user_id ? '…' : member.role === 'admin' ? 'Admin' : 'Member'}
@@ -613,24 +613,24 @@ function AdminApp() {
                           </td>
 
                           {/* Email */}
-                          <td className="px-5 py-4 text-slate-500 font-mono text-xs">{member.email || '—'}</td>
+                          <td className="px-5 py-4 text-stone-500 font-mono text-xs">{member.email || '—'}</td>
 
                           {/* Last active (session) */}
                           <td className="px-5 py-4 text-xs">
-                            <span className={member.last_active_at ? 'text-slate-500' : 'text-slate-300'}>
+                            <span className={member.last_active_at ? 'text-stone-500' : 'text-stone-300'}>
                               {formatLastSeen(member.last_active_at)}
                             </span>
                           </td>
 
                           {/* Last logged in (sign-in) */}
                           <td className="px-5 py-4 text-xs">
-                            <span className={member.last_sign_in_at ? 'text-slate-500' : 'text-slate-300'}>
+                            <span className={member.last_sign_in_at ? 'text-stone-500' : 'text-stone-300'}>
                               {formatLastSeen(member.last_sign_in_at)}
                             </span>
                           </td>
 
                           {/* Joined */}
-                          <td className="px-5 py-4 text-slate-400 text-xs whitespace-nowrap">
+                          <td className="px-5 py-4 text-stone-400 text-xs whitespace-nowrap">
                             {formatDate(member.created_at)}
                           </td>
 
@@ -641,7 +641,7 @@ function AdminApp() {
                                 onClick={() => handlePasswordReset(member)}
                                 disabled={resetBusy === member.user_id || !member.email}
                                 title="Send password reset email"
-                                className="text-xs text-sky-500 hover:text-sky-700 transition-colors font-medium disabled:opacity-40"
+                                className="text-xs text-lagoon hover:text-lagoon-700 transition-colors font-medium disabled:opacity-40"
                               >
                                 {resetBusy === member.user_id ? 'Sending…' : 'Reset pwd'}
                               </button>
