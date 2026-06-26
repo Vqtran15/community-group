@@ -258,10 +258,10 @@ export default function OverviewTab({ displayName, groupName, groupId, isAdmin, 
         {showAnnouncement && (
           announcement ? (
             <div
-              className="w-full bg-jade rounded-2xl p-4 animate-stack-in shadow-md shadow-jade/25"
-              style={{ animationDelay: '0ms' }}
+              className="w-full bg-jade rounded-2xl p-4 shadow-md shadow-jade/25"
+              style={{ animation: 'stack-in 0.3s ease-out both, announcement-shake 0.5s cubic-bezier(0.36,0.07,0.19,0.97) 320ms both' }}
             >
-              <div className="flex items-start gap-3 animate-announcement-shake" style={{ animationDelay: '320ms' }}>
+              <div className="flex items-start gap-3">
                 <Megaphone size={26} weight="fill" className="text-white/70 shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0">
                   <p className="text-[11px] font-semibold text-white/60 uppercase tracking-wide mb-1">Announcement</p>
