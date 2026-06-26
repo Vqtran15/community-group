@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { GearSix, SignOut, Trash, Crown, X, Bell, BellSlash, PencilSimple, Lock, Eye, EyeSlash, EnvelopeSimple, UserMinus, CaretDown, Lightbulb } from '@phosphor-icons/react'
+import { GearSix, SignOut, Trash, Crown, X, Bell, BellSlash, PencilSimple, Lock, Eye, EyeSlash, EnvelopeSimple, UserMinus, CaretDown } from '@phosphor-icons/react'
 import { useModalClose } from '../hooks/useModalClose.js'
 import { supabase } from '../lib/supabase.js'
 import { useToast } from '../lib/toast.jsx'
@@ -59,8 +59,6 @@ export default function SettingsModal({ groupName, displayName, groupId, isAdmin
   const [guideUrlOpen, setGuideUrlOpen] = useState(false)
   const [guideUrlValue, setGuideUrlValue] = useState('')
   const [guideUrlSaving, setGuideUrlSaving] = useState(false)
-  const [seeding, setSeeding] = useState(false)
-  const [clearing, setClearing] = useState(false)
   const [groupNameOpen, setGroupNameOpen] = useState(false)
   const [groupNameValue, setGroupNameValue] = useState('')
   const [groupNameConfirm, setGroupNameConfirm] = useState(false)
@@ -245,31 +243,6 @@ export default function SettingsModal({ groupName, displayName, groupId, isAdmin
     }
   }
 
-  async function handleSeedGroup() {
-    if (!window.confirm('Load sample meals, service weeks, and birthdays? You can clear them later.')) return
-    setSeeding(true)
-    const { error } = await supabase.rpc('seed_group')
-    if (error) toast(error.message, 'error')
-    else {
-      onGroupSettingsChange?.(prev => ({ ...prev, sample_seeded: true }))
-      window.dispatchEvent(new CustomEvent('cg-sample-data-changed'))
-      toast('Sample data loaded', 'success')
-    }
-    setSeeding(false)
-  }
-
-  async function handleClearSampleData() {
-    if (!window.confirm('Remove all sample data from the group?')) return
-    setClearing(true)
-    const { error } = await supabase.rpc('clear_sample_data')
-    if (error) toast(error.message, 'error')
-    else {
-      onGroupSettingsChange?.(prev => ({ ...prev, sample_seeded: false }))
-      window.dispatchEvent(new CustomEvent('cg-sample-data-changed'))
-      toast('Sample data cleared', 'success')
-    }
-    setClearing(false)
-  }
 
   async function handleSaveGuideUrl(e) {
     e.preventDefault()
@@ -562,29 +535,6 @@ export default function SettingsModal({ groupName, displayName, groupId, isAdmin
                           ))}
                         </div>
                       </>
-                    )}
-                  </div>
-
-                  <div>
-                    <p className="text-xs font-semibold text-stone-400 uppercase tracking-wide pb-2">Sample Data</p>
-                    {groupSettings?.sample_seeded ? (
-                      <button
-                        onClick={handleClearSampleData}
-                        disabled={clearing}
-                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors disabled:opacity-40"
-                      >
-                        <Trash size={14} weight="bold" className="shrink-0" />
-                        {clearing ? 'Clearing…' : 'Clear sample data'}
-                      </button>
-                    ) : (
-                      <button
-                        onClick={handleSeedGroup}
-                        disabled={seeding}
-                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-jade hover:text-jade-700 hover:bg-stone-50 rounded-xl transition-colors disabled:opacity-40"
-                      >
-                        <Lightbulb size={14} weight="fill" className="shrink-0" />
-                        {seeding ? 'Loading…' : 'Load sample data'}
-                      </button>
                     )}
                   </div>
 
