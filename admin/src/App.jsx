@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { supabase } from './lib/supabase.js'
 
 const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD
@@ -54,20 +54,65 @@ function formatDate(iso) {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
+function formatLastSeen(iso) {
+  if (!iso) return 'Never'
+  const diffDays = Math.floor((Date.now() - new Date(iso)) / 86400000)
+  if (diffDays === 0) return 'Today'
+  if (diffDays === 1) return 'Yesterday'
+  if (diffDays < 30) return `${diffDays}d ago`
+  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
 function AdminApp() {
-  const [groups, setGroups]             = useState([])
+  const [groups, setGroups]               = useState([])
   const [selectedGroup, setSelectedGroup] = useState(null)
-  const [members, setMembers]           = useState([])
+  const [members, setMembers]             = useState([])
   const [loadingGroups, setLoadingGroups] = useState(true)
   const [loadingMembers, setLoadingMembers] = useState(false)
-  const [editingId, setEditingId]       = useState(null)
-  const [editName, setEditName]         = useState('')
-  const [saving, setSaving]             = useState(false)
-  const [confirm, setConfirm]           = useState(null) // { type, id, label }
-  const [busy, setBusy]                 = useState(false)
-  const [error, setError]               = useState(null)
+  const [editingId, setEditingId]         = useState(null)
+  const [editName, setEditName]           = useState('')
+  const [saving, setSaving]               = useState(false)
+  const [confirm, setConfirm]             = useState(null)
+  const [busy, setBusy]                   = useState(false)
+  const [error, setError]                 = useState(null)
+  const [toast, setToast]                 = useState(null)
+
+  const [groupSearch, setGroupSearch]     = useState('')
+  const [memberSearch, setMemberSearch]   = useState('')
+
+  const [renamingGroupId, setRenamingGroupId] = useState(null)
+  const [renameValue, setRenameValue]     = useState('')
+  const [renameSaving, setRenameSaving]   = useState(false)
+
+  const [resetBusy, setResetBusy]         = useState(null)
+  const [roleToggleBusy, setRoleToggleBusy] = useState(null)
+
+  function showToast(msg, type = 'success') {
+    setToast({ msg, type })
+    setTimeout(() => setToast(null), 3000)
+  }
 
   useEffect(() => { loadGroups() }, [])
+
+  const totalUsers = useMemo(
+    () => groups.reduce((sum, g) => sum + (g.profiles?.[0]?.count ?? 0), 0),
+    [groups]
+  )
+
+  const filteredGroups = useMemo(() => {
+    if (!groupSearch.trim()) return groups
+    const q = groupSearch.toLowerCase()
+    return groups.filter(g => g.name.toLowerCase().includes(q))
+  }, [groups, groupSearch])
+
+  const filteredMembers = useMemo(() => {
+    if (!memberSearch.trim()) return members
+    const q = memberSearch.toLowerCase()
+    return members.filter(m =>
+      (m.display_name ?? '').toLowerCase().includes(q) ||
+      (m.email ?? '').toLowerCase().includes(q)
+    )
+  }, [members, memberSearch])
 
   // ── Groups ──────────────────────────────────────────────────────────────────
   async function loadGroups() {
@@ -85,6 +130,8 @@ function AdminApp() {
   async function selectGroup(group) {
     setSelectedGroup(group)
     setEditingId(null)
+    setMemberSearch('')
+    setRenamingGroupId(null)
     setLoadingMembers(true)
     setError(null)
 
@@ -95,9 +142,33 @@ function AdminApp() {
 
     if (pErr || aErr) { setError((pErr || aErr).message); setLoadingMembers(false); return }
 
-    const emailMap = Object.fromEntries((authData.users ?? []).map(u => [u.id, u.email]))
-    setMembers((profiles ?? []).map(p => ({ ...p, email: emailMap[p.user_id] ?? '' })))
+    const authMap = Object.fromEntries((authData.users ?? []).map(u => [u.id, u]))
+    setMembers((profiles ?? []).map(p => ({
+      ...p,
+      email: authMap[p.user_id]?.email ?? '',
+      last_sign_in_at: authMap[p.user_id]?.last_sign_in_at ?? null,
+    })))
     setLoadingMembers(false)
+  }
+
+  // ── Rename group ─────────────────────────────────────────────────────────────
+  async function saveGroupName(groupId) {
+    if (!renameValue.trim()) return
+    setRenameSaving(true)
+    const { error: err } = await supabase
+      .from('community_groups')
+      .update({ name: renameValue.trim() })
+      .eq('id', groupId)
+    if (err) {
+      setError(err.message)
+    } else {
+      const newName = renameValue.trim()
+      setGroups(prev => prev.map(g => g.id === groupId ? { ...g, name: newName } : g))
+      setSelectedGroup(prev => prev?.id === groupId ? { ...prev, name: newName } : prev)
+      showToast('Group renamed')
+    }
+    setRenameSaving(false)
+    setRenamingGroupId(null)
   }
 
   // ── Delete group ─────────────────────────────────────────────────────────────
@@ -109,7 +180,6 @@ function AdminApp() {
         .from('profiles').select('user_id').eq('community_group_id', group.id)
       const userIds = (profiles ?? []).map(p => p.user_id)
 
-      // Delete children before parents (no-cascade FKs must be cleared manually)
       await supabase.from('reactions').delete().eq('community_group_id', group.id)
       await supabase.from('messages').delete().eq('community_group_id', group.id)
       await Promise.all([
@@ -127,6 +197,7 @@ function AdminApp() {
 
       setGroups(prev => prev.filter(g => g.id !== group.id))
       if (selectedGroup?.id === group.id) { setSelectedGroup(null); setMembers([]) }
+      showToast('Group deleted')
     } catch (e) {
       setError(e.message)
     }
@@ -149,6 +220,7 @@ function AdminApp() {
           ? { ...g, profiles: [{ count: (g.profiles?.[0]?.count ?? 1) - 1 }] }
           : g
       ))
+      showToast('User deleted')
     } catch (e) {
       setError(e.message)
     }
@@ -170,8 +242,37 @@ function AdminApp() {
         m.user_id === userId ? { ...m, display_name: editName.trim() } : m
       ))
       setEditingId(null)
+      showToast('Name updated')
     }
     setSaving(false)
+  }
+
+  // ── Password reset ────────────────────────────────────────────────────────────
+  async function handlePasswordReset(member) {
+    setResetBusy(member.user_id)
+    const { error: err } = await supabase.auth.resetPasswordForEmail(member.email)
+    setResetBusy(null)
+    if (err) showToast(err.message, 'error')
+    else showToast(`Reset email sent to ${member.email}`)
+  }
+
+  // ── Toggle admin role ─────────────────────────────────────────────────────────
+  async function handleRoleToggle(member) {
+    const newRole = member.role === 'admin' ? 'member' : 'admin'
+    setRoleToggleBusy(member.user_id)
+    const { error: err } = await supabase
+      .from('profiles')
+      .update({ role: newRole })
+      .eq('user_id', member.user_id)
+    setRoleToggleBusy(null)
+    if (err) {
+      showToast(err.message, 'error')
+    } else {
+      setMembers(prev => prev.map(m =>
+        m.user_id === member.user_id ? { ...m, role: newRole } : m
+      ))
+      showToast(`${member.display_name} is now ${newRole === 'admin' ? 'an Admin' : 'a Member'}`)
+    }
   }
 
   // ── Confirm dialog ───────────────────────────────────────────────────────────
@@ -217,15 +318,32 @@ function AdminApp() {
   // ── Render ───────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col">
+      {/* Toast */}
+      {toast && (
+        <div className={`fixed top-4 right-4 z-[60] px-4 py-3 rounded-xl shadow-lg text-sm font-medium animate-fade-in ${
+          toast.type === 'error' ? 'bg-red-500 text-white' : 'bg-emerald-600 text-white'
+        }`}>
+          {toast.msg}
+        </div>
+      )}
+
       {/* Header */}
       <header className="bg-slate-900 text-white px-6 py-4 flex items-center justify-between shrink-0">
         <div>
           <h1 className="text-lg font-bold tracking-tight">Community Admin</h1>
           <p className="text-xs text-slate-400 mt-0.5">Master view — all groups and members</p>
         </div>
-        <span className="text-xs bg-slate-700 text-slate-300 px-2.5 py-1 rounded-full font-mono">
-          service role
-        </span>
+        <div className="flex items-center gap-5">
+          {!loadingGroups && (
+            <div className="flex items-center gap-4 text-xs text-slate-400">
+              <span><span className="text-white font-semibold">{groups.length}</span> groups</span>
+              <span><span className="text-white font-semibold">{totalUsers}</span> total users</span>
+            </div>
+          )}
+          <span className="text-xs bg-slate-700 text-slate-300 px-2.5 py-1 rounded-full font-mono">
+            service role
+          </span>
+        </div>
       </header>
 
       {error && (
@@ -250,41 +368,64 @@ function AdminApp() {
             </button>
           </div>
 
+          <div className="px-3 py-2 border-b border-slate-100">
+            <input
+              type="search"
+              value={groupSearch}
+              onChange={e => setGroupSearch(e.target.value)}
+              placeholder="Search groups…"
+              className="w-full text-sm px-3 py-1.5 rounded-lg border border-slate-200 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-400"
+            />
+          </div>
+
           <div className="flex-1 overflow-y-auto">
             {loadingGroups ? (
               <div className="flex items-center justify-center py-16">
                 <p className="text-sm text-slate-400 animate-pulse">Loading…</p>
               </div>
-            ) : groups.length === 0 ? (
+            ) : filteredGroups.length === 0 ? (
               <p className="text-sm text-slate-400 text-center py-16">No groups found</p>
             ) : (
               <ul className="divide-y divide-slate-50">
-                {groups.map(group => (
-                  <li key={group.id}>
-                    <button
-                      onClick={() => selectGroup(group)}
-                      className={`w-full text-left px-4 py-3.5 hover:bg-slate-50 transition-colors ${selectedGroup?.id === group.id ? 'bg-slate-50 border-l-2 border-slate-800' : ''}`}
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <p className="text-sm font-semibold text-slate-800 truncate">{group.name}</p>
-                          <p className="text-xs text-slate-400 mt-0.5">
-                            {memberCount(group)} {memberCount(group) === 1 ? 'member' : 'members'} · {formatDate(group.created_at)}
-                          </p>
+                {filteredGroups.map(group => {
+                  const count = memberCount(group)
+                  const isEmpty = count === 0
+                  return (
+                    <li key={group.id}>
+                      <button
+                        onClick={() => selectGroup(group)}
+                        className={`w-full text-left px-4 py-3.5 hover:bg-slate-50 transition-colors ${selectedGroup?.id === group.id ? 'bg-slate-50 border-l-2 border-slate-800' : ''}`}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1.5 mb-0.5">
+                              <p className={`text-sm font-semibold truncate ${isEmpty ? 'text-slate-400' : 'text-slate-800'}`}>
+                                {group.name}
+                              </p>
+                              {isEmpty && (
+                                <span className="shrink-0 text-[9px] font-bold uppercase tracking-wider bg-slate-100 text-slate-400 px-1.5 py-0.5 rounded-full">
+                                  Empty
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-slate-400">
+                              {count} {count === 1 ? 'member' : 'members'} · {formatDate(group.created_at)}
+                            </p>
+                          </div>
+                          <button
+                            onClick={e => {
+                              e.stopPropagation()
+                              setConfirm({ type: 'group', id: group.id, label: group.name, target: group })
+                            }}
+                            className="shrink-0 text-xs text-red-400 hover:text-red-600 transition-colors mt-0.5"
+                          >
+                            Delete
+                          </button>
                         </div>
-                        <button
-                          onClick={e => {
-                            e.stopPropagation()
-                            setConfirm({ type: 'group', id: group.id, label: group.name, target: group })
-                          }}
-                          className="shrink-0 text-xs text-red-400 hover:text-red-600 transition-colors mt-0.5"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </button>
-                  </li>
-                ))}
+                      </button>
+                    </li>
+                  )
+                })}
               </ul>
             )}
           </div>
@@ -300,12 +441,59 @@ function AdminApp() {
               </div>
             </div>
           ) : (
-            <div className="max-w-3xl mx-auto p-6">
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h2 className="text-xl font-bold text-slate-800">{selectedGroup.name}</h2>
-                  <p className="text-sm text-slate-400 mt-0.5">{members.length} {members.length === 1 ? 'member' : 'members'}</p>
+            <div className="max-w-6xl mx-auto p-6">
+              {/* Group header */}
+              <div className="flex items-start justify-between gap-4 mb-6">
+                <div className="min-w-0">
+                  {renamingGroupId === selectedGroup.id ? (
+                    <div className="flex items-center gap-2">
+                      <input
+                        autoFocus
+                        value={renameValue}
+                        onChange={e => setRenameValue(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter') saveGroupName(selectedGroup.id)
+                          if (e.key === 'Escape') setRenamingGroupId(null)
+                        }}
+                        className="text-xl font-bold text-slate-800 border border-slate-300 rounded-lg px-3 py-1 focus:outline-none focus:ring-2 focus:ring-slate-400"
+                      />
+                      <button
+                        onClick={() => saveGroupName(selectedGroup.id)}
+                        disabled={renameSaving}
+                        className="text-xs text-emerald-600 hover:text-emerald-700 font-semibold disabled:opacity-50"
+                      >
+                        {renameSaving ? 'Saving…' : 'Save'}
+                      </button>
+                      <button
+                        onClick={() => setRenamingGroupId(null)}
+                        className="text-xs text-slate-400 hover:text-slate-600"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-xl font-bold text-slate-800">{selectedGroup.name}</h2>
+                      <button
+                        onClick={() => { setRenamingGroupId(selectedGroup.id); setRenameValue(selectedGroup.name) }}
+                        className="text-xs text-slate-400 hover:text-slate-600 transition-colors font-medium"
+                      >
+                        Rename
+                      </button>
+                    </div>
+                  )}
+                  <p className="text-sm text-slate-400 mt-0.5">
+                    {members.length} {members.length === 1 ? 'member' : 'members'}
+                  </p>
                 </div>
+
+                <input
+                  type="search"
+                  value={memberSearch}
+                  onChange={e => setMemberSearch(e.target.value)}
+                  placeholder="Search members…"
+                  className="shrink-0 w-56 text-sm px-3 py-2 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-slate-400"
+                />
               </div>
 
               {loadingMembers ? (
@@ -316,20 +504,27 @@ function AdminApp() {
                 <div className="text-center py-16 text-slate-400">
                   <p className="text-sm">No members in this group</p>
                 </div>
+              ) : filteredMembers.length === 0 ? (
+                <div className="text-center py-16 text-slate-400">
+                  <p className="text-sm">No members match your search</p>
+                </div>
               ) : (
                 <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-slate-100 bg-slate-50">
                         <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Member</th>
+                        <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Role</th>
                         <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Email</th>
+                        <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Last Sign-in</th>
                         <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Joined</th>
                         <th className="px-5 py-3" />
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50">
-                      {members.map(member => (
+                      {filteredMembers.map(member => (
                         <tr key={member.user_id} className="hover:bg-slate-50 transition-colors">
+                          {/* Name */}
                           <td className="px-5 py-4">
                             <div className="flex items-center gap-3">
                               <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold text-slate-600 shrink-0">
@@ -374,15 +569,56 @@ function AdminApp() {
                               )}
                             </div>
                           </td>
-                          <td className="px-5 py-4 text-slate-500 font-mono text-xs">{member.email || '—'}</td>
-                          <td className="px-5 py-4 text-slate-400 text-xs">{formatDate(member.created_at)}</td>
-                          <td className="px-5 py-4 text-right">
+
+                          {/* Role badge — click to toggle */}
+                          <td className="px-5 py-4">
                             <button
-                              onClick={() => setConfirm({ type: 'user', id: member.user_id, label: member.display_name, target: member })}
-                              className="text-xs text-red-400 hover:text-red-600 transition-colors font-medium"
+                              onClick={() => handleRoleToggle(member)}
+                              disabled={roleToggleBusy === member.user_id}
+                              title={`Click to make ${member.role === 'admin' ? 'Member' : 'Admin'}`}
+                              className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold transition-colors disabled:opacity-50 ${
+                                member.role === 'admin'
+                                  ? 'bg-amber-100 text-amber-700 hover:bg-amber-200'
+                                  : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                              }`}
                             >
-                              Delete
+                              {roleToggleBusy === member.user_id ? '…' : member.role === 'admin' ? 'Admin' : 'Member'}
                             </button>
+                          </td>
+
+                          {/* Email */}
+                          <td className="px-5 py-4 text-slate-500 font-mono text-xs">{member.email || '—'}</td>
+
+                          {/* Last sign-in */}
+                          <td className="px-5 py-4 text-xs">
+                            <span className={member.last_sign_in_at ? 'text-slate-500' : 'text-slate-300'}>
+                              {formatLastSeen(member.last_sign_in_at)}
+                            </span>
+                          </td>
+
+                          {/* Joined */}
+                          <td className="px-5 py-4 text-slate-400 text-xs whitespace-nowrap">
+                            {formatDate(member.created_at)}
+                          </td>
+
+                          {/* Actions */}
+                          <td className="px-5 py-4">
+                            <div className="flex items-center justify-end gap-3 whitespace-nowrap">
+                              <button
+                                onClick={() => handlePasswordReset(member)}
+                                disabled={resetBusy === member.user_id || !member.email}
+                                title="Send password reset email"
+                                className="text-xs text-sky-500 hover:text-sky-700 transition-colors font-medium disabled:opacity-40"
+                              >
+                                {resetBusy === member.user_id ? 'Sending…' : 'Reset pwd'}
+                              </button>
+                              <button
+                                onClick={() => setConfirm({ type: 'user', id: member.user_id, label: member.display_name, target: member })}
+                                className="text-xs text-red-400 hover:text-red-600 transition-colors font-medium"
+                              >
+                                Delete
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}
