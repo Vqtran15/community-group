@@ -274,14 +274,14 @@ export default function OverviewTab({ displayName, groupName, groupId, isAdmin, 
           announcement ? (
             <div className="w-full animate-stack-in">
               <div
-                className="w-full bg-jade rounded-2xl p-4 shadow-md shadow-jade/25 animate-announcement-shake"
+                className="w-full bg-jade rounded-2xl p-5 shadow-md shadow-jade/25 animate-announcement-shake"
                 style={{ animation: 'announcement-shake 0.5s cubic-bezier(0.36,0.07,0.19,0.97) 320ms both, announcement-shake 0.5s cubic-bezier(0.36,0.07,0.19,0.97) 2820ms both' }}
               >
-                <div className="flex items-start gap-3">
-                  <Megaphone size={26} weight="fill" className="text-white/70 shrink-0 mt-0.5" />
+                <div className="flex items-start gap-4">
+                  <Megaphone size={34} weight="fill" className="text-white/70 shrink-0 mt-0.5" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-[11px] font-semibold text-white/60 uppercase tracking-wide mb-1">Announcement</p>
-                    <p className="text-sm text-white leading-relaxed font-medium whitespace-pre-wrap">{announcement}</p>
+                    <p className="text-[11px] font-semibold text-white/60 uppercase tracking-wide mb-1.5">Announcement</p>
+                    <p className="text-base text-white leading-relaxed font-medium whitespace-pre-wrap">{announcement}</p>
                   </div>
                   {isAdmin && (
                     <button
