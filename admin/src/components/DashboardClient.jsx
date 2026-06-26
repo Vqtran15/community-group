@@ -365,8 +365,8 @@ export default function DashboardClient({ initialGroups }) {
                   <p className="text-sm">{search ? 'No matching members' : 'No members in this group'}</p>
                 </div>
               ) : (
-                <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden">
-                  <table className="w-full text-sm">
+                <div className="bg-white rounded-2xl border border-stone-200 overflow-x-auto">
+                  <table className="w-full min-w-[860px] text-sm">
                     <thead>
                       <tr className="border-b border-stone-100 bg-stone-50">
                         <th className="text-left px-5 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wider">Name</th>
