@@ -170,6 +170,50 @@ export default function App() {
       .then(({ data }) => setGroupSettings(data ?? {}))
   }, [groupId])
 
+  // Navigate when a push notification is clicked (SW sends postMessage)
+  useEffect(() => {
+    if (!('serviceWorker' in navigator)) return
+    function onMessage(e) {
+      if (e.data?.type === 'NAVIGATE') navigate(e.data.url)
+    }
+    navigator.serviceWorker.addEventListener('message', onMessage)
+    return () => navigator.serviceWorker.removeEventListener('message', onMessage)
+  }, [])
+
+  // Load initial unread state from DB on mount
+  useEffect(() => {
+    if (!groupId || !session?.user?.id || location.pathname === '/chat') return
+    async function loadInitialUnread() {
+      const { data: memberships } = await supabase
+        .from('conversation_members')
+        .select('conversation_id, last_read_at')
+        .eq('user_id', session.user.id)
+
+      const convIds = (memberships ?? []).map(m => m.conversation_id)
+      if (!convIds.length) return
+
+      const { data: msgs } = await supabase
+        .from('messages')
+        .select('conversation_id, created_at')
+        .in('conversation_id', convIds)
+        .neq('user_id', session.user.id)
+        .order('created_at', { ascending: false })
+        .limit(200)
+
+      const latestByConv = {}
+      for (const msg of msgs ?? []) {
+        if (!latestByConv[msg.conversation_id]) latestByConv[msg.conversation_id] = msg.created_at
+      }
+      const readMap = Object.fromEntries((memberships ?? []).map(m => [m.conversation_id, m.last_read_at]))
+      const hasUnread = (memberships ?? []).some(m => {
+        const latest = latestByConv[m.conversation_id]
+        return latest && (!readMap[m.conversation_id] || latest > readMap[m.conversation_id])
+      })
+      if (hasUnread) setUnreadChatCount(c => Math.max(c, 1))
+    }
+    loadInitialUnread()
+  }, [groupId, session?.user?.id])
+
   // Unread chat tracking — fires for any new message while not on /chat
   useEffect(() => {
     if (!groupId) return
@@ -266,11 +310,7 @@ export default function App() {
               <span className={`relative px-3 py-1 rounded-2xl transition-colors ${active ? 'bg-jade text-white' : ''}`}>
                 <t.Icon size={26} weight={active ? 'fill' : 'regular'} />
                 {t.path === '/chat' && unreadChatCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 bg-coral rounded-full border-2 border-white flex items-center justify-center">
-                    <span className="text-[9px] font-bold text-white leading-none px-0.5">
-                      {unreadChatCount > 99 ? '99+' : unreadChatCount}
-                    </span>
-                  </span>
+                  <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-coral rounded-full border-2 border-white" />
                 )}
               </span>
               <span className={`text-[10px] font-medium tracking-wide ${active ? 'text-jade' : ''}`}>{t.shortLabel}</span>

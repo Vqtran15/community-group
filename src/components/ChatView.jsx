@@ -280,15 +280,14 @@ export default function ChatView({ conversation, session, displayName, groupId, 
     }
   }, [convId, displayName])
 
-  useEffect(() => {
-    if (!scrollRef.current || !isAtBottom) return
-    scrollRef.current.scrollTop = scrollRef.current.scrollHeight
-  }, [messages])
-
   useLayoutEffect(() => {
-    if (!preserveScrollRef.current || !scrollRef.current) return
-    scrollRef.current.scrollTop = scrollRef.current.scrollHeight - preserveScrollRef.current
-    preserveScrollRef.current = null
+    if (!scrollRef.current) return
+    if (preserveScrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight - preserveScrollRef.current
+      preserveScrollRef.current = null
+      return
+    }
+    if (isAtBottom) scrollRef.current.scrollTop = scrollRef.current.scrollHeight
   }, [messages])
 
   useEffect(() => {
