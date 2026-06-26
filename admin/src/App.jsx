@@ -143,10 +143,16 @@ function AdminApp() {
     if (pErr || aErr) { setError((pErr || aErr).message); setLoadingMembers(false); return }
 
     const authMap = Object.fromEntries((authData.users ?? []).map(u => [u.id, u]))
+    const userIds = (profiles ?? []).map(p => p.user_id)
+
+    const { data: sessionData } = await supabase.rpc('admin_get_last_session', { user_ids: userIds })
+    const sessionMap = Object.fromEntries((sessionData ?? []).map(s => [s.user_id, s.last_active_at]))
+
     setMembers((profiles ?? []).map(p => ({
       ...p,
       email: authMap[p.user_id]?.email ?? '',
       last_sign_in_at: authMap[p.user_id]?.last_sign_in_at ?? null,
+      last_active_at: sessionMap[p.user_id] ?? null,
     })))
     setLoadingMembers(false)
   }
@@ -249,7 +255,12 @@ function AdminApp() {
 
   // ── Password reset ────────────────────────────────────────────────────────────
   async function handlePasswordReset(member) {
+    setConfirm({ type: 'reset', label: member.display_name, target: member })
+  }
+
+  async function confirmPasswordReset(member) {
     setResetBusy(member.user_id)
+    setConfirm(null)
     const { error: err } = await supabase.auth.resetPasswordForEmail(member.email)
     setResetBusy(null)
     if (err) showToast(err.message, 'error')
@@ -279,18 +290,26 @@ function AdminApp() {
   function ConfirmDialog() {
     if (!confirm) return null
     const isGroup = confirm.type === 'group'
+    const isReset = confirm.type === 'reset'
+
     return (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
         <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6">
           <h3 className="text-lg font-bold text-slate-800 mb-2">
-            {isGroup ? 'Delete community group?' : 'Delete user account?'}
+            {isReset ? 'Send password reset?' : isGroup ? 'Delete community group?' : 'Delete user account?'}
           </h3>
           <p className="text-sm text-slate-500 mb-6">
-            <span className="font-semibold text-slate-700">{confirm.label}</span>
-            {isGroup
-              ? ' and all its members, messages, and data will be permanently deleted.'
-              : "'s account, profile, and messages will be permanently deleted."}
-            {' '}This cannot be undone.
+            {isReset ? (
+              <>A password reset email will be sent to <span className="font-semibold text-slate-700">{confirm.target.email}</span>.</>
+            ) : (
+              <>
+                <span className="font-semibold text-slate-700">{confirm.label}</span>
+                {isGroup
+                  ? ' and all its members, messages, and data will be permanently deleted.'
+                  : "'s account, profile, and messages will be permanently deleted."}
+                {' '}This cannot be undone.
+              </>
+            )}
           </p>
           <div className="flex gap-3">
             <button
@@ -301,11 +320,17 @@ function AdminApp() {
               Cancel
             </button>
             <button
-              onClick={() => isGroup ? handleDeleteGroup(confirm.target) : handleDeleteUser(confirm.target)}
+              onClick={() => {
+                if (isReset) confirmPasswordReset(confirm.target)
+                else if (isGroup) handleDeleteGroup(confirm.target)
+                else handleDeleteUser(confirm.target)
+              }}
               disabled={busy}
-              className="flex-1 px-4 py-2 rounded-xl bg-red-500 text-white text-sm font-medium hover:bg-red-600 transition-colors disabled:opacity-50"
+              className={`flex-1 px-4 py-2 rounded-xl text-white text-sm font-medium transition-colors disabled:opacity-50 ${
+                isReset ? 'bg-sky-500 hover:bg-sky-600' : 'bg-red-500 hover:bg-red-600'
+              }`}
             >
-              {busy ? 'Deleting…' : 'Delete forever'}
+              {isReset ? 'Send reset email' : busy ? 'Deleting…' : 'Delete forever'}
             </button>
           </div>
         </div>
@@ -516,7 +541,7 @@ function AdminApp() {
                         <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Member</th>
                         <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Role</th>
                         <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Email</th>
-                        <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Last Sign-in</th>
+                        <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Activity</th>
                         <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Joined</th>
                         <th className="px-5 py-3" />
                       </tr>
@@ -589,11 +614,16 @@ function AdminApp() {
                           {/* Email */}
                           <td className="px-5 py-4 text-slate-500 font-mono text-xs">{member.email || '—'}</td>
 
-                          {/* Last sign-in */}
+                          {/* Activity: last active (session) + last sign-in */}
                           <td className="px-5 py-4 text-xs">
-                            <span className={member.last_sign_in_at ? 'text-slate-500' : 'text-slate-300'}>
-                              {formatLastSeen(member.last_sign_in_at)}
+                            <span className={member.last_active_at ? 'text-slate-600 font-medium' : 'text-slate-300'}>
+                              {formatLastSeen(member.last_active_at)}
                             </span>
+                            {member.last_sign_in_at && (
+                              <p className="text-slate-400 mt-0.5">
+                                signed in {formatLastSeen(member.last_sign_in_at)}
+                              </p>
+                            )}
                           </td>
 
                           {/* Joined */}
