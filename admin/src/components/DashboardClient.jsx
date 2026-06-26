@@ -326,15 +326,13 @@ export default function DashboardClient({ initialGroups }) {
                 </div>
                 <div className="flex items-center gap-1 ml-2 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                   <button
-                    title="Rename"
                     onClick={e => { e.stopPropagation(); startRename(group.id, group.name, 'group') }}
-                    className="p-1 rounded hover:bg-stone-100 text-stone-400 hover:text-stone-700 text-xs"
-                  >✏️</button>
+                    className="px-2 py-0.5 rounded-md text-xs font-medium bg-stone-100 text-stone-600 hover:bg-stone-200 transition-colors"
+                  >Rename</button>
                   <button
-                    title="Delete group"
                     onClick={e => { e.stopPropagation(); handleDeleteGroup(group) }}
-                    className="p-1 rounded hover:bg-red-50 text-stone-400 hover:text-red-500 text-xs"
-                  >🗑</button>
+                    className="px-2 py-0.5 rounded-md text-xs font-medium bg-red-50 text-red-500 hover:bg-red-100 transition-colors"
+                  >Delete</button>
                 </div>
               </div>
             ))}
@@ -416,25 +414,22 @@ export default function DashboardClient({ initialGroups }) {
                           <td className="px-5 py-3">
                             <div className="flex items-center gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
                               <button
-                                title={member.role === 'admin' ? 'Demote to member' : 'Promote to admin'}
                                 onClick={() => handleToggleRole(member)}
-                                className="p-1.5 rounded-lg hover:bg-jade/10 text-stone-400 hover:text-jade transition-colors text-xs"
+                                className="px-2 py-0.5 rounded-md text-xs font-medium bg-jade/10 text-jade hover:bg-jade/20 transition-colors"
                               >
-                                {member.role === 'admin' ? '⬇' : '⬆'}
+                                {member.role === 'admin' ? 'Demote' : 'Promote'}
                               </button>
                               <button
-                                title="Send password reset"
                                 onClick={() => handlePasswordReset(member)}
-                                className="p-1.5 rounded-lg hover:bg-lagoon-50 text-stone-400 hover:text-lagoon-600 transition-colors text-xs"
+                                className="px-2 py-0.5 rounded-md text-xs font-medium bg-stone-100 text-stone-600 hover:bg-stone-200 transition-colors"
                               >
-                                🔑
+                                Reset PW
                               </button>
                               <button
-                                title="Delete user"
                                 onClick={() => handleDeleteUser(member)}
-                                className="p-1.5 rounded-lg hover:bg-red-50 text-stone-400 hover:text-red-500 transition-colors text-xs"
+                                className="px-2 py-0.5 rounded-md text-xs font-medium bg-red-50 text-red-500 hover:bg-red-100 transition-colors"
                               >
-                                🗑
+                                Delete
                               </button>
                             </div>
                           </td>

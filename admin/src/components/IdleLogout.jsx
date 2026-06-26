@@ -37,8 +37,8 @@ export default function IdleLogout() {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
       <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full mx-4 text-center">
-        <div className="text-amber-500 text-3xl mb-3">⏱</div>
-        <h2 className="text-lg font-bold text-stone-800 mb-2">Session expiring soon</h2>
+        <div className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 mb-4">Session expiring</div>
+        <h2 className="text-lg font-bold text-stone-800 mb-2">Still there?</h2>
         <p className="text-sm text-stone-500 mb-6">
           You'll be logged out in 5 minutes due to inactivity.
         </p>
