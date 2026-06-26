@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-export function useModalClose(onClose, duration = 180) {
+export function useModalClose(onClose, duration = 250) {
   const [closing, setClosing] = useState(false)
 
   function close() {

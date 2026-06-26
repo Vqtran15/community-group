@@ -168,9 +168,9 @@ export default {
       },
       animation: {
         'modal-in':         'modal-in 0.25s cubic-bezier(0.32,0.72,0,1) backwards',
-        'modal-out':        'modal-out 0.18s cubic-bezier(0.32,0.72,0,1) forwards',
+        'modal-out':        'modal-out 0.25s cubic-bezier(0.32,0.72,0,1) forwards',
         'overlay-in':       'overlay-in 0.22s ease-out backwards',
-        'overlay-out':      'overlay-out 0.18s ease-in forwards',
+        'overlay-out':      'overlay-out 0.25s ease-in forwards',
         'slide-in-right':   'slide-in-right 0.22s ease-out backwards',
         'slide-in-left':    'slide-in-left 0.22s ease-out backwards',
         'slide-out-right':  'slide-out-right 0.2s ease-in forwards',
