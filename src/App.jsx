@@ -295,6 +295,7 @@ export default function App() {
           onPushToggle={push.toggle}
           groupSettings={groupSettings}
           onGroupSettingsChange={setGroupSettings}
+          onGroupNameChange={name => setProfile(p => ({ ...p, community_groups: { ...p.community_groups, name } }))}
           onRevisitGuide={() => {
             const key = `cg_welcomed_${session.user.id}_${groupId}`
             localStorage.removeItem(key)

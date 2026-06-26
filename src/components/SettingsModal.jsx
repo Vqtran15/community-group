@@ -23,7 +23,7 @@ function AvatarCircle({ icon, name, userId, colorKey, size = 'md' }) {
   )
 }
 
-export default function SettingsModal({ groupName, displayName, groupId, isAdmin, userId, onClose, onDisplayNameChange, pushSupported, pushSubscribed, pushPermission, pushToggling, onPushToggle, groupSettings, onGroupSettingsChange, onRevisitGuide }) {
+export default function SettingsModal({ groupName, displayName, groupId, isAdmin, userId, onClose, onDisplayNameChange, onGroupNameChange, pushSupported, pushSubscribed, pushPermission, pushToggling, onPushToggle, groupSettings, onGroupSettingsChange, onRevisitGuide }) {
   const [closing, close] = useModalClose(onClose)
   const toast = useToast()
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -61,6 +61,10 @@ export default function SettingsModal({ groupName, displayName, groupId, isAdmin
   const [guideUrlSaving, setGuideUrlSaving] = useState(false)
   const [seeding, setSeeding] = useState(false)
   const [clearing, setClearing] = useState(false)
+  const [groupNameOpen, setGroupNameOpen] = useState(false)
+  const [groupNameValue, setGroupNameValue] = useState('')
+  const [groupNameConfirm, setGroupNameConfirm] = useState(false)
+  const [groupNameSaving, setGroupNameSaving] = useState(false)
 
   useEffect(() => {
     if (!userId) return
@@ -285,6 +289,25 @@ export default function SettingsModal({ groupName, displayName, groupId, isAdmin
     setGuideUrlSaving(false)
   }
 
+  async function handleChangeGroupName() {
+    const trimmed = groupNameValue.trim()
+    if (!trimmed || trimmed === groupName) return
+    setGroupNameSaving(true)
+    const { error } = await supabase
+      .from('community_groups')
+      .update({ name: trimmed })
+      .eq('id', groupId)
+    if (error) {
+      toast('Failed to rename group', 'error')
+    } else {
+      onGroupNameChange?.(trimmed)
+      toast('Group renamed', 'success')
+      setGroupNameOpen(false)
+      setGroupNameConfirm(false)
+    }
+    setGroupNameSaving(false)
+  }
+
   async function handleDeleteAccount() {
     setDeleting(true)
     setDeleteError(null)
@@ -340,6 +363,69 @@ export default function SettingsModal({ groupName, displayName, groupId, isAdmin
               <div className={`grid transition-all duration-200 ease-in-out ${adminOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
                 <div className="overflow-hidden">
                 <div className="space-y-3 pb-1">
+                  <div>
+                    <p className="text-xs font-semibold text-stone-400 uppercase tracking-wide pb-2">Group Name</p>
+                    {groupNameOpen ? (
+                      groupNameConfirm ? (
+                        <div className="p-3 bg-stone-50 border border-stone-200 rounded-xl space-y-3">
+                          <p className="text-sm text-stone-700">
+                            Rename group to <span className="font-semibold">"{groupNameValue.trim()}"</span>?
+                          </p>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => setGroupNameConfirm(false)}
+                              className="flex-1 py-2 text-sm font-medium text-stone-600 bg-white border border-stone-200 rounded-xl hover:bg-stone-50 transition-colors"
+                            >
+                              Back
+                            </button>
+                            <button
+                              onClick={handleChangeGroupName}
+                              disabled={groupNameSaving}
+                              className="flex-1 py-2 text-sm font-medium text-white bg-jade rounded-xl hover:bg-jade-700 transition-colors disabled:opacity-40"
+                            >
+                              {groupNameSaving ? 'Saving…' : 'Confirm'}
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          <input
+                            autoFocus
+                            type="text"
+                            value={groupNameValue}
+                            onChange={e => setGroupNameValue(e.target.value)}
+                            maxLength={60}
+                            placeholder="Group name"
+                            className="w-full text-sm bg-white border border-stone-200 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-jade placeholder:text-stone-300"
+                          />
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => setGroupNameOpen(false)}
+                              className="flex-1 py-2 text-sm font-medium text-stone-600 bg-white border border-stone-200 rounded-xl hover:bg-stone-50 transition-colors"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              onClick={() => setGroupNameConfirm(true)}
+                              disabled={!groupNameValue.trim() || groupNameValue.trim() === groupName}
+                              className="flex-1 py-2 text-sm font-medium text-white bg-jade rounded-xl hover:bg-jade-700 transition-colors disabled:opacity-40"
+                            >
+                              Save
+                            </button>
+                          </div>
+                        </div>
+                      )
+                    ) : (
+                      <button
+                        onClick={() => { setGroupNameValue(groupName ?? ''); setGroupNameOpen(true); setGroupNameConfirm(false) }}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-stone-600 hover:text-stone-800 hover:bg-stone-50 rounded-xl transition-colors"
+                      >
+                        <PencilSimple size={14} weight="bold" className="text-stone-400 shrink-0" />
+                        <span className="flex-1 text-left truncate text-stone-500">{groupName}</span>
+                      </button>
+                    )}
+                  </div>
+
                   {inviteCode && (
                     <div>
                       <p className="text-xs font-semibold text-stone-400 uppercase tracking-wide pb-2">Invite Code</p>
