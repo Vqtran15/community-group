@@ -1,7 +1,23 @@
+import { useEffect, useRef } from 'react'
 import { useRegisterSW } from 'virtual:pwa-register/react'
 
 export default function UpdatePrompt() {
-  const { needRefresh: [needRefresh], updateServiceWorker } = useRegisterSW()
+  const registrationRef = useRef(null)
+  const { needRefresh: [needRefresh], updateServiceWorker } = useRegisterSW({
+    onRegisteredSW(_, registration) {
+      registrationRef.current = registration
+    },
+  })
+
+  useEffect(() => {
+    function handleVisibilityChange() {
+      if (document.visibilityState === 'visible') {
+        registrationRef.current?.update()
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
+  }, [])
 
   if (!needRefresh) return null
 
