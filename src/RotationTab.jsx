@@ -306,6 +306,8 @@ const RotationTab = forwardRef(function RotationTab({ config, revealKey, groupNa
           onClose={() => setShowAddModal(false)}
           onSave={handleAddPage}
           existingDates={pages.map(p => p.week_date)}
+          targetDow={targetDow}
+          intervalDays={intervalDays}
         />
       )}
     </>

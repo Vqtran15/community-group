@@ -1,18 +1,30 @@
 import { useState, useEffect } from 'react'
-import { getNextTuesday, toDateString } from '../utils/dates.js'
+import { toDateString } from '../utils/dates.js'
 import { useModalClose } from '../hooks/useModalClose.js'
 
-function findNextAvailableTuesday(existingDates) {
-  let d = getNextTuesday()
+function findNextAvailableDate(existingDates, targetDow = null, intervalDays = 7) {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  let d = new Date(today)
+  if (targetDow !== null) {
+    const diff = d.getDay() === targetDow ? 7 : (targetDow - d.getDay() + 7) % 7
+    d.setDate(d.getDate() + diff)
+  } else {
+    d.setDate(d.getDate() + intervalDays)
+  }
   while (existingDates.includes(toDateString(d))) {
-    d = new Date(d.getTime() + 7 * 24 * 60 * 60 * 1000)
+    d.setDate(d.getDate() + intervalDays)
+    if (targetDow !== null) {
+      const diff = (targetDow - d.getDay() + 7) % 7
+      if (diff > 0) d.setDate(d.getDate() + diff)
+    }
   }
   return d
 }
 
-export default function AddPageModal({ noun, pageNoun, defaultTitle, pages = [], onClose, onSave, existingDates }) {
+export default function AddPageModal({ noun, pageNoun, defaultTitle, pages = [], onClose, onSave, existingDates, targetDow = null, intervalDays = 7 }) {
   const [closing, close] = useModalClose(onClose)
-  const defaultDate = findNextAvailableTuesday(existingDates)
+  const defaultDate = findNextAvailableDate(existingDates, targetDow, intervalDays)
   const defaultDateStr = toDateString(defaultDate)
 
   const [title, setTitle]         = useState(defaultTitle(defaultDateStr))
