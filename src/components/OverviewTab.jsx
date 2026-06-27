@@ -253,7 +253,7 @@ export default function OverviewTab({ displayName, groupName, groupId, isAdmin, 
 
       <div className="mb-7 flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-stone-800">Community Group</h1>
+          <h1 className="text-3xl font-bold text-stone-800">CoveySpace</h1>
         </div>
         <button
           onClick={onOpenSettings}

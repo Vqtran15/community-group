@@ -13,7 +13,7 @@ self.addEventListener('push', event => {
   let data = {}
   try { data = event.data?.json() ?? {} } catch {}
 
-  const title   = data.title ?? 'Community Group'
+  const title   = data.title ?? 'CoveySpace'
   const options = {
     body:      data.body ?? '',
     icon:      '/icons/icon-192.png',
