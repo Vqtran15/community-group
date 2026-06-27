@@ -3,6 +3,9 @@ export default {
   content: ['./index.html', './src/**/*.{js,jsx}'],
   theme: {
     extend: {
+      fontFamily: {
+        'league-gothic': ['"League Gothic"', 'sans-serif'],
+      },
       colors: {
         coral: {
           light: '#FEF4EE',

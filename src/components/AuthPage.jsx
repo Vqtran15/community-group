@@ -108,23 +108,22 @@ export default function AuthPage() {
 
   return (
     <div
-      className="min-h-screen bg-sunrise-50 flex items-center justify-center p-4"
+      className="min-h-screen bg-gradient-to-b from-jade-50 to-white flex items-center justify-center p-4"
       style={{ paddingTop: 'env(safe-area-inset-top)' }}
     >
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-jade mb-4">
-            <UsersThree size={32} weight="fill" className="text-white" />
+          <div className="inline-flex items-center gap-3 mb-1">
+            <div className="w-14 h-14 rounded-full bg-jade ring-4 ring-jade/20 flex items-center justify-center shrink-0">
+              <UsersThree size={30} weight="fill" className="text-white" />
+            </div>
+            <h1 className="font-league-gothic text-6xl tracking-wide text-jade">Covey Space</h1>
           </div>
-          <h1 className="text-2xl font-bold text-stone-800">Covey Space</h1>
-          <p className="text-stone-500 mt-1 text-sm">
-            Sign up for meals and service, chat with your group, and remember birthdays!
-          </p>
         </div>
 
         {/* Card */}
-        <div className="bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden">
+        <div className="bg-white rounded-2xl shadow-lg border border-stone-100 overflow-hidden">
           {/* Mode toggle tabs */}
           <div className="flex border-b border-stone-100">
             <button
