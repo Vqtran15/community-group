@@ -53,10 +53,8 @@ export default function AddPageModal({ noun, pageNoun, defaultTitle, pages = [],
   }, [slotCount])
 
   function handleDateChange(e) {
-    const val = e.target.value
-    setDate(val)
+    setDate(e.target.value)
     setError(null)
-    if (val) setTitle(defaultTitle(val))
   }
 
   function setDish(index, value) {

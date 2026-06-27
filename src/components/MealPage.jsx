@@ -191,44 +191,42 @@ export default function MealPage({ page, noun, itemNoun, editLabel, tables, reve
 
         <div className="p-4 flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              {pageCount > 1 && (
-                <button
-                  onClick={onPrevPage}
-                  disabled={!canGoPrev}
-                  className="shrink-0 w-7 h-7 flex items-center justify-center rounded-full border-2 border-stone-200 text-stone-500 hover:border-jade hover:text-jade disabled:opacity-30 disabled:cursor-not-allowed transition-colors touch-manipulation"
-                >‹</button>
-              )}
-              <h1 className="text-2xl font-bold text-stone-800 truncate">{page.title}</h1>
-              {pageCount > 1 && (
-                <button
-                  onClick={onNextPage}
-                  disabled={!canGoNext}
-                  className="shrink-0 w-7 h-7 flex items-center justify-center rounded-full border-2 border-stone-200 text-stone-500 hover:border-jade hover:text-jade disabled:opacity-30 disabled:cursor-not-allowed transition-colors touch-manipulation"
-                >›</button>
-              )}
-            </div>
+            <h1 className="text-2xl font-bold text-stone-800">{page.title}</h1>
             <p className="text-stone-500 mt-1">{formatDate(page.week_date)}</p>
-            {page.is_paused ? (
+            {page.is_paused && (
               <p className="text-sm text-amber-500 font-medium mt-0.5">No meal signup this week</p>
-            ) : (
-              <p className="text-sm text-stone-400 mt-0.5">
-                {filledCount} / {page.slot_count} {noun.toLowerCase()}s filled
-              </p>
             )}
           </div>
-          {isAdmin && (
-            <button
-              onClick={handleTogglePause}
-              disabled={pausing}
-              title={page.is_paused ? 'Resume signup' : 'Pause signup'}
-              className="shrink-0 mt-0.5 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 border border-stone-200 text-stone-500 hover:border-amber-300 hover:text-amber-500 hover:bg-amber-50"
-            >
-              {page.is_paused
-                ? <><PlayCircle size={14} weight="fill" /> Resume</>
-                : <><PauseCircle size={14} weight="fill" /> Pause</>
-              }
-            </button>
+          {(isAdmin || pageCount > 1) && (
+            <div className="shrink-0 flex flex-col items-end gap-2">
+              {isAdmin && (
+                <button
+                  onClick={handleTogglePause}
+                  disabled={pausing}
+                  title={page.is_paused ? 'Resume signup' : 'Pause signup'}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 border border-stone-200 text-stone-500 hover:border-amber-300 hover:text-amber-500 hover:bg-amber-50"
+                >
+                  {page.is_paused
+                    ? <><PlayCircle size={14} weight="fill" /> Resume</>
+                    : <><PauseCircle size={14} weight="fill" /> Pause</>
+                  }
+                </button>
+              )}
+              {pageCount > 1 && (
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={onPrevPage}
+                    disabled={!canGoPrev}
+                    className="w-7 h-7 flex items-center justify-center rounded-full border-2 border-stone-200 text-stone-500 hover:border-jade hover:text-jade disabled:opacity-30 disabled:cursor-not-allowed transition-colors touch-manipulation"
+                  >‹</button>
+                  <button
+                    onClick={onNextPage}
+                    disabled={!canGoNext}
+                    className="w-7 h-7 flex items-center justify-center rounded-full border-2 border-stone-200 text-stone-500 hover:border-jade hover:text-jade disabled:opacity-30 disabled:cursor-not-allowed transition-colors touch-manipulation"
+                  >›</button>
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>

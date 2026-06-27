@@ -7,4 +7,8 @@ if (!url || !key) {
   throw new Error('Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY in .env')
 }
 
-export const supabase = createClient(url, key)
+export const supabase = createClient(url, key, {
+  global: {
+    fetch: (input, init = {}) => fetch(input, { ...init, cache: 'no-store' }),
+  },
+})

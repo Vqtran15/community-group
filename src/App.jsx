@@ -3,7 +3,6 @@ import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-
 import { ForkKnife, HandHeart, ChatCircleDots, HandsPraying, House, WifiSlash, NotePencil } from '@phosphor-icons/react'
 import { haptic } from './lib/haptic.js'
 import { usePushNotifications } from './hooks/usePushNotifications.js'
-import { formatDate } from './utils/dates.js'
 import { getUpcomingBirthdays } from './utils/birthdays.js'
 import { supabase } from './lib/supabase.js'
 import ScheduleTab from './components/ScheduleTab.jsx'
@@ -29,7 +28,7 @@ const MEALS_CONFIG = {
   pageNounPlural: 'Meals',
   tables: { pages: 'meal_pages', signups: 'signups', pauseRpc: 'toggle_meal_pause' },
   autoFill: true,
-  defaultTitle: dateStr => `Meal — ${formatDate(dateStr)}`,
+  defaultTitle: () => 'Meal',
 }
 
 const SERVICES_CONFIG = {
@@ -41,7 +40,7 @@ const SERVICES_CONFIG = {
   pageNoun: 'Service',
   pageNounPlural: 'Services',
   tables: { pages: 'serving_pages', signups: 'serving_signups', pauseRpc: 'toggle_service_pause' },
-  defaultTitle: dateStr => `Service — ${formatDate(dateStr)}`,
+  defaultTitle: () => 'Service',
 }
 
 const TABS = [
