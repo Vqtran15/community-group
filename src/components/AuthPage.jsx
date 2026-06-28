@@ -108,22 +108,22 @@ export default function AuthPage() {
 
   return (
     <div
-      className="min-h-screen bg-gradient-to-b from-jade-50 to-white flex items-center justify-center p-4"
-      style={{ paddingTop: 'env(safe-area-inset-top)' }}
+      className="min-h-screen bg-gradient-to-b from-jade-50 to-white flex items-start justify-center p-4"
+      style={{ paddingTop: 'calc(env(safe-area-inset-top) + 2.5rem)' }}
     >
       <div className="w-full max-w-sm">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-3 mb-1">
-            <div className="w-14 h-14 rounded-full bg-jade ring-4 ring-jade/20 flex items-center justify-center shrink-0">
-              <UsersThree size={30} weight="fill" className="text-white" />
-            </div>
-            <h1 className="font-league-gothic text-6xl tracking-wide text-jade">Covey Space</h1>
-          </div>
-        </div>
-
         {/* Card */}
         <div className="bg-white rounded-2xl shadow-lg border border-stone-100 overflow-hidden">
+          {/* Logo inside card */}
+          <div className="pt-7 pb-5 text-center border-b border-stone-100">
+            <div className="inline-flex items-center gap-3">
+              <div className="w-11 h-11 rounded-full bg-jade ring-4 ring-jade/20 flex items-center justify-center shrink-0">
+                <UsersThree size={24} weight="fill" className="text-white" />
+              </div>
+              <h1 className="font-league-gothic text-5xl tracking-wide text-jade">Covey Space</h1>
+            </div>
+          </div>
+
           {/* Mode toggle tabs */}
           <div className="flex border-b border-stone-100">
             <button
@@ -270,9 +270,20 @@ export default function AuthPage() {
               {/* Password */}
               {mode !== 'forgot' && (
                 <div>
-                  <label className="block text-xs font-semibold text-stone-600 mb-1.5 uppercase tracking-wide">
-                    Password
-                  </label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-xs font-semibold text-stone-600 uppercase tracking-wide">
+                      Password
+                    </label>
+                    {mode === 'signin' && (
+                      <button
+                        type="button"
+                        onClick={() => switchMode('forgot')}
+                        className="text-xs text-stone-400 hover:text-stone-600 transition-colors"
+                      >
+                        Forgot password?
+                      </button>
+                    )}
+                  </div>
                   <input
                     type="password"
                     value={password}
@@ -304,19 +315,6 @@ export default function AuthPage() {
                     autoComplete="new-password"
                     className={inputClass}
                   />
-                </div>
-              )}
-
-              {/* Forgot password link */}
-              {mode === 'signin' && (
-                <div className="flex justify-end -mt-2">
-                  <button
-                    type="button"
-                    onClick={() => switchMode('forgot')}
-                    className="text-xs text-stone-400 transition-colors"
-                  >
-                    Forgot password?
-                  </button>
                 </div>
               )}
 

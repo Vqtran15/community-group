@@ -13,6 +13,7 @@ import ChatTab from './components/ChatTab.jsx'
 import GuideTab from './components/GuideTab.jsx'
 import OverviewTab from './components/OverviewTab.jsx'
 import AuthPage from './components/AuthPage.jsx'
+import LandingPage from './components/LandingPage.jsx'
 import ResetPasswordPage from './components/ResetPasswordPage.jsx'
 import WelcomeSplash from './components/WelcomeSplash.jsx'
 import SettingsModal from './components/SettingsModal.jsx'
@@ -244,6 +245,7 @@ export default function App() {
 
   if (!session) return (
     <Routes>
+      <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<AuthPage />} />
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
