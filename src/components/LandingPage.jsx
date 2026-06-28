@@ -6,7 +6,7 @@ const FEATURES = [
   {
     Icon: ForkKnife,
     title: 'Meal Signups',
-    description: 'Automatically rotate dinner ideas, week after week. No more having to figure out what to eat and sending out a Google Sheet for signup.',
+    description: 'Automatically rotate dinner ideas, week after week. No more figuring out what to eat or managing a Google Sheet signup.',
     color: 'bg-jade/10 text-jade',
   },
   {
@@ -18,13 +18,13 @@ const FEATURES = [
   {
     Icon: ChatCircleDots,
     title: 'Group Chat',
-    description: 'One place for all your group conversations. No need to bother with muting group texts, using GroupMe, WhatsApp or Telegram. Keep all things group related in one app.',
+    description: 'One place for all your group conversations — no more juggling group texts, GroupMe, or WhatsApp.',
     color: 'bg-sage/20 text-sage-700',
   },
   {
     Icon: HandsPraying,
     title: 'Prayer Requests',
-    description: "Prayer requests get their own space — they'll never get buried in a chat thread again.",
+    description: "Prayer requests get their own dedicated space — never buried in a chat thread, always easy to find and revisit.",
     color: 'bg-sunrise/10 text-sunrise',
   },
 ]
@@ -34,6 +34,7 @@ export default function LandingPage() {
   const [leaving, setLeaving] = useState(false)
 
   function goToLogin() {
+    if (leaving) return
     setLeaving(true)
     setTimeout(() => navigate('/login'), 350)
   }
@@ -55,24 +56,32 @@ export default function LandingPage() {
         </div>
         <button
           onClick={goToLogin}
-          className="px-4 py-2 bg-jade text-white text-sm font-semibold rounded-xl hover:bg-jade-700 transition-colors"
+          disabled={leaving}
+          className="px-4 py-2 bg-jade text-white text-sm font-semibold rounded-xl hover:bg-jade-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          Sign up for free
+          Log in
         </button>
       </nav>
 
       {/* Hero */}
-      <section className="bg-gradient-to-b from-jade-50 to-white px-6 pt-24 pb-14 text-center">
+      <section className="bg-gradient-to-b from-jade-50 to-white px-6 pt-24 pb-16 text-center">
         <div className="max-w-2xl mx-auto">
           <div className="inline-block bg-jade/10 text-jade text-xs font-semibold uppercase tracking-widest px-3 py-1.5 rounded-full mb-6">
-            Gathering community made simple.
+            Gathering community made simple
           </div>
           <h1 className="font-league-gothic text-6xl sm:text-7xl tracking-wide text-stone-900 leading-none mb-6">
             One place for your<br />whole community.
           </h1>
-          <p className="text-stone-500 text-lg leading-relaxed max-w-xl mx-auto">
+          <p className="text-stone-500 text-lg leading-relaxed max-w-xl mx-auto mb-8">
             Covey Space brings automated meal signups, service schedules, group chats, and prayer requests into one place — built for those who share life together around a table and out in the community.
           </p>
+          <button
+            onClick={goToLogin}
+            disabled={leaving}
+            className="inline-flex items-center gap-2 px-7 py-3.5 bg-jade text-white font-semibold rounded-2xl text-base hover:bg-jade-700 transition-colors shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            Sign up for free <ArrowRight size={18} weight="bold" />
+          </button>
         </div>
       </section>
 
@@ -99,23 +108,43 @@ export default function LandingPage() {
       {/* Screenshots */}
       <section className="py-16 bg-stone-50 overflow-hidden">
         <h2 className="font-league-gothic text-4xl sm:text-5xl text-stone-800 tracking-wide text-center mb-10">See it in action.</h2>
-        <div className="flex gap-5 px-8 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide justify-start sm:justify-center">
-          {[
-            { src: '/screenshots/home-screen.PNG', label: 'Home' },
-            { src: '/screenshots/meal-signup.PNG', label: 'Meal Signup' },
-            { src: '/screenshots/service-signup.PNG', label: 'Service Signup' },
-            { src: '/screenshots/chat-list.PNG', label: 'Chats' },
-            { src: '/screenshots/group-chat.PNG', label: 'Group Chat' },
-          ].map(({ src, label }) => (
-            <div key={label} className="shrink-0 snap-center flex flex-col items-center gap-3">
-              <div className="w-52 p-2 bg-stone-800 rounded-[1.75rem] shadow-2xl">
-                <div className="rounded-[1.25rem] overflow-hidden">
-                  <img src={src} alt={label} className="w-full h-auto block" />
+        <div className="relative">
+          <div className="flex gap-5 px-8 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide justify-start sm:justify-center">
+            {[
+              { src: '/screenshots/home-screen.PNG', label: 'Home' },
+              { src: '/screenshots/meal-signup.PNG', label: 'Meal Signup' },
+              { src: '/screenshots/service-signup.PNG', label: 'Service Signup' },
+              { src: '/screenshots/chat-list.PNG', label: 'Chats' },
+              { src: '/screenshots/group-chat.PNG', label: 'Group Chat' },
+            ].map(({ src, label }) => (
+              <div key={label} className="shrink-0 snap-center flex flex-col items-center gap-3">
+                <div className="w-52 p-2 bg-stone-800 rounded-[1.75rem] shadow-2xl">
+                  <div className="rounded-[1.25rem] overflow-hidden">
+                    <img src={src} alt={label} className="w-full h-auto block" />
+                  </div>
                 </div>
+                <span className="text-xs font-medium text-stone-400">{label}</span>
               </div>
-              <span className="text-xs font-medium text-stone-400">{label}</span>
-            </div>
-          ))}
+            ))}
+          </div>
+          {/* Scroll hint fade — hidden on larger screens where all frames fit */}
+          <div className="absolute inset-y-0 right-0 w-20 bg-gradient-to-l from-stone-50 to-transparent pointer-events-none sm:hidden" />
+        </div>
+      </section>
+
+      {/* Final CTA */}
+      <section className="px-6 py-20 bg-jade text-center">
+        <div className="max-w-xl mx-auto">
+          <h2 className="font-league-gothic text-5xl sm:text-6xl text-white tracking-wide mb-4">
+            Bring your whole group together.
+          </h2>
+          <button
+            onClick={goToLogin}
+            disabled={leaving}
+            className="inline-flex items-center gap-2 px-7 py-3.5 bg-white text-jade font-semibold rounded-2xl text-base hover:bg-jade-50 transition-colors shadow-lg disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            Sign up for free <ArrowRight size={18} weight="bold" />
+          </button>
         </div>
       </section>
 
@@ -197,27 +226,12 @@ export default function LandingPage() {
             Whether you're a pastor, group leader, or just curious — reach out and I'll get back to you.
           </p>
           <a
-            href="mailto:vuong.tran.dev@gmail.com"
+            href="mailto:hello@coveyspace.com"
             className="inline-flex items-center gap-2 px-6 py-3 bg-jade hover:bg-jade-700 text-white font-semibold rounded-2xl text-sm transition-colors"
           >
             <EnvelopeSimple size={16} weight="bold" />
-            vuong.tran.dev@gmail.com
+            hello@coveyspace.com
           </a>
-        </div>
-      </section>
-
-      {/* Final CTA */}
-      <section className="px-6 py-20 bg-jade text-center">
-        <div className="max-w-xl mx-auto">
-          <h2 className="font-league-gothic text-5xl sm:text-6xl text-white tracking-wide mb-4">
-            Ready to get started?
-          </h2>
-          <button
-            onClick={goToLogin}
-            className="inline-flex items-center gap-2 px-7 py-3.5 bg-white text-jade font-semibold rounded-2xl text-base hover:bg-jade-50 transition-colors shadow-lg"
-          >
-            Sign up for free <ArrowRight size={18} weight="bold" />
-          </button>
         </div>
       </section>
 
